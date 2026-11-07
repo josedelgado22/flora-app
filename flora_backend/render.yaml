@@ -1,0 +1,39 @@
+# Blueprint de Render para F.L.O.R.A. (fase 1: autenticación).
+# Las variables con `sync: false` se piden al crear el servicio y NO se guardan en el repositorio.
+services:
+  - type: web
+    name: flora-backend
+    runtime: python
+    plan: free
+    buildCommand: bash build.sh          # instala, collectstatic y migrate (contra DATABASE_URL)
+    startCommand: gunicorn config.wsgi:application --workers 2 --timeout 60
+    healthCheckPath: /api/v1/health/
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: DEBUG
+        value: "false"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL            # PostgreSQL de Supabase (usa la URL del "pooler" si la directa no conecta)
+        sync: false
+      - key: ALLOWED_HOSTS
+        value: .onrender.com
+      - key: CORS_ALLOWED_ORIGINS    # opcional: solo si pruebas desde un navegador
+        sync: false
+      - key: TWO_FACTOR_REQUIRED
+        value: "true"
+      # --- Correo (SMTP). Sin EMAIL_HOST_USER los códigos solo salen en los logs de Render ---
+      - key: EMAIL_HOST
+        sync: false
+      - key: EMAIL_PORT
+        value: "587"
+      - key: EMAIL_USE_TLS
+        value: "true"
+      - key: EMAIL_HOST_USER
+        sync: false
+      - key: EMAIL_HOST_PASSWORD
+        sync: false
+      - key: DEFAULT_FROM_EMAIL
+        sync: false

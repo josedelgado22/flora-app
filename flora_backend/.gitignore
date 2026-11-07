@@ -1,0 +1,11 @@
+node_modules/
+.expo/
+dist/
+web-build/
+flora_backend/.venv/
+flora_backend/__pycache__/
+flora_backend/db.sqlite3
+staticfiles/
+.pytest_cache/
+.env
+flora_backend/.env

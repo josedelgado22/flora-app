@@ -1,0 +1,1536 @@
+openapi: 3.0.3
+info:
+  title: ''
+  version: 0.0.0
+paths:
+  /api/schema/:
+    get:
+      operationId: schema_retrieve
+      description: |-
+        OpenApi3 schema for this API. Format can be selected via content negotiation.
+
+        - YAML: application/vnd.oai.openapi
+        - JSON: application/vnd.oai.openapi+json
+      parameters:
+      - in: query
+        name: format
+        schema:
+          type: string
+          enum:
+          - json
+          - yaml
+      - in: query
+        name: lang
+        schema:
+          type: string
+          enum:
+          - af
+          - ar
+          - ar-dz
+          - ast
+          - az
+          - be
+          - bg
+          - bn
+          - br
+          - bs
+          - ca
+          - ckb
+          - cs
+          - cy
+          - da
+          - de
+          - dsb
+          - el
+          - en
+          - en-au
+          - en-gb
+          - eo
+          - es
+          - es-ar
+          - es-co
+          - es-mx
+          - es-ni
+          - es-ve
+          - et
+          - eu
+          - fa
+          - fi
+          - fr
+          - fy
+          - ga
+          - gd
+          - gl
+          - he
+          - hi
+          - hr
+          - hsb
+          - hu
+          - hy
+          - ia
+          - id
+          - ig
+          - io
+          - is
+          - it
+          - ja
+          - ka
+          - kab
+          - kk
+          - km
+          - kn
+          - ko
+          - ky
+          - lb
+          - lt
+          - lv
+          - mk
+          - ml
+          - mn
+          - mr
+          - ms
+          - my
+          - nb
+          - ne
+          - nl
+          - nn
+          - os
+          - pa
+          - pl
+          - pt
+          - pt-br
+          - ro
+          - ru
+          - sk
+          - sl
+          - sq
+          - sr
+          - sr-latn
+          - sv
+          - sw
+          - ta
+          - te
+          - tg
+          - th
+          - tk
+          - tr
+          - tt
+          - udm
+          - ug
+          - uk
+          - ur
+          - uz
+          - vi
+          - zh-hans
+          - zh-hant
+      tags:
+      - schema
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.oai.openapi:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/yaml:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/vnd.oai.openapi+json:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/agenda/:
+    get:
+      operationId: v1_agenda_retrieve
+      description: Agenda de riego del usuario, con la frecuencia ajustada a la luz
+        y la evaporación.
+      parameters:
+      - in: query
+        name: dias
+        schema:
+          type: integer
+        description: Horizonte en días (1 a 60, por defecto 14).
+      - in: query
+        name: proyeccion
+        schema:
+          type: boolean
+        description: Con 1 o true, cada ítem incluye la lista `riegos` proyectada
+          al horizonte.
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgendaResponse'
+          description: ''
+  /api/v1/auth/2fa/resend/:
+    post:
+      operationId: v1_auth_2fa_resend_create
+      description: Reenvía el código del doble factor.
+      tags:
+      - Autenticación
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Challenge'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Challenge'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthExpiresIn'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: ''
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: ''
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: ''
+  /api/v1/auth/2fa/verify/:
+    post:
+      operationId: v1_auth_2fa_verify_create
+      description: Confirma el código de 6 dígitos del doble factor (OTP firmado con
+        HMAC-SHA256, 300 s) y devuelve los tokens.
+      tags:
+      - Autenticación
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyCode'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/VerifyCode'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokens'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: ''
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: ''
+  /api/v1/auth/login/:
+    post:
+      operationId: v1_auth_login_create
+      description: Con doble factor activo responde `requires_2fa` y un `challenge_id`;
+        si no, entrega los tokens JWT.
+      tags:
+      - Autenticación
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Login'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Login'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: ''
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: ''
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: ''
+  /api/v1/auth/me/:
+    get:
+      operationId: v1_auth_me_retrieve
+      description: GET /auth/me/ -> datos del usuario autenticado (requiere Bearer
+        token).
+      tags:
+      - Autenticación
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: ''
+  /api/v1/auth/register/:
+    post:
+      operationId: v1_auth_register_create
+      description: Crea la cuenta (pendiente) y envía un código de 6 dígitos por correo.
+        Se activa en /auth/register/verify/.
+      tags:
+      - Autenticación
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Register'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Register'
+        required: true
+      security:
+      - {}
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthChallenge'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: ''
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: ''
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: ''
+  /api/v1/auth/register/resend/:
+    post:
+      operationId: v1_auth_register_resend_create
+      description: Reenvía el código del registro (con tiempo de espera entre envíos).
+      tags:
+      - Autenticación
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Challenge'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Challenge'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthExpiresIn'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: ''
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: ''
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: ''
+  /api/v1/auth/register/verify/:
+    post:
+      operationId: v1_auth_register_verify_create
+      description: Confirma el código del registro, activa la cuenta y devuelve los
+        tokens JWT.
+      tags:
+      - Autenticación
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyCode'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/VerifyCode'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokens'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: ''
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+          description: ''
+  /api/v1/auth/token/refresh/:
+    post:
+      operationId: v1_auth_token_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/v1/diagnostico/:
+    post:
+      operationId: v1_diagnostico_create
+      description: Causa y recomendación del síntoma; con `planta_id` se ajusta a
+        la planta (404 si es ajena o no existe).
+      tags:
+      - Diagnóstico
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DiagnosisRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DiagnosisRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Diagnostico'
+          description: ''
+  /api/v1/diagnostico/sintomas/:
+    get:
+      operationId: v1_diagnostico_sintomas_list
+      description: GET /diagnostico/sintomas/ · catálogo de síntomas.
+      tags:
+      - Diagnóstico
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SintomaItem'
+          description: ''
+  /api/v1/health/:
+    get:
+      operationId: v1_health_retrieve
+      description: Chequeo de salud (sin autenticación).
+      tags:
+      - Sistema
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+          description: ''
+  /api/v1/identificacion/:
+    post:
+      operationId: v1_identificacion_create
+      description: Recibe una imagen vía multipart/form-data. Realiza inspección de
+        Magic Bytes en el servidor (OWASP M7), aplica Throttling y consulta la API
+        de Pl@ntNet v2 con un timeout de 3.0s. Si el servicio externo falla o se agota
+        la cuota, conmuta automáticamente hacia el adaptador sintético local sin interrumpir
+        la operación.
+      summary: Identificación botánica por IA con Circuit Breaker (HU-FLOR-009)
+      tags:
+      - v1
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/IdentifyRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdentifyResultResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '429':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/v1/plantas/:
+    get:
+      operationId: v1_plantas_list
+      description: CRUD de plantas del usuario autenticado. Las de otros usuarios
+        responden 404.
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Plant'
+          description: ''
+    post:
+      operationId: v1_plantas_create
+      description: CRUD de plantas del usuario autenticado. Las de otros usuarios
+        responden 404.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Plant'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Plant'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Plant'
+          description: ''
+  /api/v1/plantas/{id}/:
+    get:
+      operationId: v1_plantas_retrieve
+      description: CRUD de plantas del usuario autenticado. Las de otros usuarios
+        responden 404.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este plant.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Plant'
+          description: ''
+    put:
+      operationId: v1_plantas_update
+      description: CRUD de plantas del usuario autenticado. Las de otros usuarios
+        responden 404.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este plant.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Plant'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Plant'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Plant'
+          description: ''
+    patch:
+      operationId: v1_plantas_partial_update
+      description: CRUD de plantas del usuario autenticado. Las de otros usuarios
+        responden 404.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este plant.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPlant'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPlant'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Plant'
+          description: ''
+    delete:
+      operationId: v1_plantas_destroy
+      description: CRUD de plantas del usuario autenticado. Las de otros usuarios
+        responden 404.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este plant.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/plantas/{id}/agenda/:
+    get:
+      operationId: v1_plantas_agenda_retrieve
+      description: Próximo riego de la planta y los siguientes proyectados dentro
+        del horizonte (HU-008).
+      parameters:
+      - in: query
+        name: dias
+        schema:
+          type: integer
+        description: Horizonte en días (1 a 60, por defecto 14).
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este plant.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlantaAgenda'
+          description: ''
+  /api/v1/plantas/{id}/riegos/:
+    get:
+      operationId: v1_plantas_riegos_list
+      description: Historial (últimos 100 riegos).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este plant.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Riego'
+          description: ''
+    post:
+      operationId: v1_plantas_riegos_create
+      description: 'Registra un riego. Idempotente por instante: repetirlo responde
+        200 sin duplicar ni sumar racha.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este plant.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RiegoCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RiegoCreate'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiegoRegistrado'
+          description: ''
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RiegoRegistrado'
+          description: ''
+  /api/v1/rachas/me/:
+    get:
+      operationId: v1_rachas_me_retrieve
+      description: Racha vigente y nombre de la mascota (HU-004).
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RachaResponse'
+          description: ''
+    patch:
+      operationId: v1_rachas_me_partial_update
+      description: Renombra a la mascota.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedMascota'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedMascota'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RachaResponse'
+          description: ''
+  /api/v1/sync/batch/:
+    post:
+      operationId: v1_sync_batch_create
+      description: Procesa en lote lo hecho sin conexión (SC-02). Cada operación es
+        idempotente e independiente.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SyncBatch'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SyncBatch'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncBatchResponse'
+          description: ''
+components:
+  schemas:
+    AgendaItem:
+      type: object
+      properties:
+        riegos:
+          type: array
+          items:
+            $ref: '#/components/schemas/RiegoProyectado'
+        planta_id:
+          type: integer
+        nombre_comun:
+          type: string
+        ubicacion:
+          type: string
+        nivel_luz:
+          type: string
+        frecuencia_base_dias:
+          type: integer
+        factor_evaporacion:
+          type: number
+          format: double
+        frecuencia_riego_dias:
+          type: integer
+        ultimo_riego:
+          type: string
+          format: date-time
+          nullable: true
+        proximo_riego:
+          type: string
+          format: date
+        dias_restantes:
+          type: integer
+        estado:
+          $ref: '#/components/schemas/EstadoEnum'
+      required:
+      - dias_restantes
+      - estado
+      - factor_evaporacion
+      - frecuencia_base_dias
+      - frecuencia_riego_dias
+      - nivel_luz
+      - nombre_comun
+      - planta_id
+      - proximo_riego
+      - ubicacion
+      - ultimo_riego
+    AgendaResponse:
+      type: object
+      properties:
+        fecha:
+          type: string
+          format: date
+        resumen:
+          $ref: '#/components/schemas/AgendaResumen'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AgendaItem'
+      required:
+      - fecha
+      - items
+      - resumen
+    AgendaResumen:
+      type: object
+      properties:
+        atrasadas:
+          type: integer
+        hoy:
+          type: integer
+      required:
+      - atrasadas
+      - hoy
+    AuthChallenge:
+      type: object
+      properties:
+        requires_verification:
+          type: boolean
+        requires_2fa:
+          type: boolean
+        challenge_id:
+          type: string
+        method:
+          type: string
+        email_hint:
+          type: string
+        expires_in:
+          type: integer
+          description: Segundos de validez del código.
+      required:
+      - challenge_id
+      - email_hint
+      - expires_in
+      - method
+    AuthExpiresIn:
+      type: object
+      properties:
+        expires_in:
+          type: integer
+      required:
+      - expires_in
+    AuthTokens:
+      type: object
+      properties:
+        access:
+          type: string
+        refresh:
+          type: string
+        user:
+          $ref: '#/components/schemas/User'
+      required:
+      - access
+      - refresh
+      - user
+    BlankEnum:
+      enum:
+      - ''
+    Challenge:
+      type: object
+      properties:
+        challenge_id:
+          type: string
+          format: uuid
+      required:
+      - challenge_id
+    DiagnosisRequest:
+      type: object
+      properties:
+        sintoma_id:
+          $ref: '#/components/schemas/SintomaIdEnum'
+        planta_id:
+          type: integer
+          description: 'Id de la planta (opcional): afina la recomendación.'
+      required:
+      - sintoma_id
+    Diagnostico:
+      type: object
+      properties:
+        sintoma_id:
+          type: string
+        titulo:
+          type: string
+        causa:
+          type: string
+        solucion:
+          type: string
+        tipo:
+          type: string
+        recomendaciones_adicionales:
+          type: array
+          items:
+            type: string
+      required:
+      - causa
+      - recomendaciones_adicionales
+      - sintoma_id
+      - solucion
+      - tipo
+      - titulo
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+        detail:
+          type: string
+      required:
+      - code
+      - detail
+    EstadoEnum:
+      enum:
+      - atrasada
+      - hoy
+      - ok
+      type: string
+      description: |-
+        * `atrasada` - atrasada
+        * `hoy` - hoy
+        * `ok` - ok
+    Health:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+      - status
+    IdentifyRequest:
+      type: object
+      properties:
+        imagen:
+          type: string
+          format: uri
+        organ:
+          allOf:
+          - $ref: '#/components/schemas/OrganEnum'
+          default: auto
+      required:
+      - imagen
+    IdentifyResultResponse:
+      type: object
+      properties:
+        resultados:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+          description: Listado de coincidencias botánicas ordenadas por score
+        fuente:
+          type: string
+          description: Proveedor que resolvió la petición ('plantnet_v2' o 'simulated_fallback')
+        tiempo_ms:
+          type: integer
+          description: Tiempo total de procesamiento en milisegundos (SLA < 3000 ms)
+      required:
+      - fuente
+      - resultados
+      - tiempo_ms
+    Login:
+      type: object
+      properties:
+        email:
+          type: string
+          maxLength: 254
+        password:
+          type: string
+          maxLength: 128
+      required:
+      - email
+      - password
+    LoginResponse:
+      type: object
+      properties:
+        access:
+          type: string
+        refresh:
+          type: string
+        user:
+          $ref: '#/components/schemas/User'
+        requires_2fa:
+          type: boolean
+        challenge_id:
+          type: string
+        method:
+          type: string
+        email_hint:
+          type: string
+        expires_in:
+          type: integer
+    NivelLuzEnum:
+      enum:
+      - baja
+      - media
+      - alta
+      type: string
+      description: |-
+        * `baja` - Baja
+        * `media` - Media
+        * `alta` - Alta
+    OrganEnum:
+      enum:
+      - auto
+      - leaf
+      - flower
+      - fruit
+      - bark
+      type: string
+      description: |-
+        * `auto` - auto
+        * `leaf` - leaf
+        * `flower` - flower
+        * `fruit` - fruit
+        * `bark` - bark
+    PatchedMascota:
+      type: object
+      properties:
+        mascota_nombre:
+          type: string
+          maxLength: 20
+          minLength: 2
+    PatchedPlant:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        nombre_comun:
+          type: string
+          maxLength: 100
+        nombre_cientifico:
+          type: string
+          maxLength: 150
+        categoria:
+          type: string
+          nullable: true
+        especie_slug:
+          type: string
+          maxLength: 80
+        nivel_luz:
+          oneOf:
+          - $ref: '#/components/schemas/NivelLuzEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        ubicacion:
+          oneOf:
+          - $ref: '#/components/schemas/UbicacionEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        frecuencia_base_dias:
+          type: integer
+          maximum: 365
+          minimum: 1
+        frecuencia_riego_dias:
+          type: integer
+          readOnly: true
+        ultimo_riego:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        foto_url:
+          type: string
+          nullable: true
+          readOnly: true
+        client_local_id:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+          writeOnly: true
+          nullable: true
+        creado_en:
+          type: string
+          format: date-time
+          readOnly: true
+    Plant:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        nombre_comun:
+          type: string
+          maxLength: 100
+        nombre_cientifico:
+          type: string
+          maxLength: 150
+        categoria:
+          type: string
+          nullable: true
+        especie_slug:
+          type: string
+          maxLength: 80
+        nivel_luz:
+          oneOf:
+          - $ref: '#/components/schemas/NivelLuzEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        ubicacion:
+          oneOf:
+          - $ref: '#/components/schemas/UbicacionEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        frecuencia_base_dias:
+          type: integer
+          maximum: 365
+          minimum: 1
+        frecuencia_riego_dias:
+          type: integer
+          readOnly: true
+        ultimo_riego:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        foto_url:
+          type: string
+          nullable: true
+          readOnly: true
+        client_local_id:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+          writeOnly: true
+          nullable: true
+        creado_en:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - creado_en
+      - foto_url
+      - frecuencia_riego_dias
+      - id
+      - nombre_comun
+      - ultimo_riego
+    PlantaAgenda:
+      type: object
+      properties:
+        fecha:
+          type: string
+          format: date
+      required:
+      - fecha
+    RachaResponse:
+      type: object
+      properties:
+        racha_actual:
+          type: integer
+        mejor_racha:
+          type: integer
+        ultimo_dia:
+          type: string
+          format: date
+          nullable: true
+        hecho_hoy:
+          type: boolean
+        en_riesgo:
+          type: boolean
+        mascota_nombre:
+          type: string
+      required:
+      - en_riesgo
+      - hecho_hoy
+      - mascota_nombre
+      - mejor_racha
+      - racha_actual
+      - ultimo_dia
+    Register:
+      type: object
+      properties:
+        nombre:
+          type: string
+          maxLength: 100
+          minLength: 2
+        apellido:
+          type: string
+          maxLength: 100
+          minLength: 2
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        password:
+          type: string
+          writeOnly: true
+          maxLength: 128
+      required:
+      - apellido
+      - email
+      - nombre
+      - password
+    Riego:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        regado_en:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - id
+      - regado_en
+    RiegoCreate:
+      type: object
+      properties:
+        regado_en:
+          type: string
+          format: date-time
+    RiegoProyectado:
+      type: object
+      properties:
+        fecha:
+          type: string
+          format: date
+        dias_restantes:
+          type: integer
+        estado:
+          $ref: '#/components/schemas/EstadoEnum'
+        proyectado:
+          type: boolean
+      required:
+      - dias_restantes
+      - estado
+      - fecha
+      - proyectado
+    RiegoRegistrado:
+      type: object
+      properties:
+        racha:
+          $ref: '#/components/schemas/RachaResponse'
+        riego:
+          $ref: '#/components/schemas/Riego'
+        planta:
+          $ref: '#/components/schemas/Plant'
+      required:
+      - planta
+      - racha
+      - riego
+    SintomaIdEnum:
+      enum:
+      - s1
+      - s2
+      - s3
+      - s4
+      type: string
+      description: |-
+        * `s1` - s1
+        * `s2` - s2
+        * `s3` - s3
+        * `s4` - s4
+    SintomaItem:
+      type: object
+      properties:
+        sintoma_id:
+          type: string
+        titulo:
+          type: string
+        causa:
+          type: string
+        solucion:
+          type: string
+        tipo:
+          type: string
+      required:
+      - causa
+      - sintoma_id
+      - solucion
+      - tipo
+      - titulo
+    SyncBatch:
+      type: object
+      properties:
+        operaciones:
+          type: array
+          items:
+            $ref: '#/components/schemas/SyncOperation'
+      required:
+      - operaciones
+    SyncBatchResponse:
+      type: object
+      properties:
+        procesadas:
+          type: array
+          items:
+            type: integer
+        rechazadas:
+          type: array
+          items:
+            $ref: '#/components/schemas/SyncRechazada'
+        mapeo_plantas:
+          type: array
+          items:
+            $ref: '#/components/schemas/SyncMapeoPlanta'
+      required:
+      - mapeo_plantas
+      - procesadas
+      - rechazadas
+    SyncMapeoPlanta:
+      type: object
+      properties:
+        local_id:
+          type: integer
+        server_id:
+          type: integer
+      required:
+      - local_id
+      - server_id
+    SyncOperation:
+      type: object
+      properties:
+        client_id:
+          type: integer
+        tipo:
+          type: string
+          maxLength: 30
+        payload:
+          type: object
+          additionalProperties: {}
+        creado_en:
+          type: string
+          format: date-time
+      required:
+      - client_id
+      - creado_en
+      - payload
+      - tipo
+    SyncRechazada:
+      type: object
+      properties:
+        client_id:
+          type: integer
+        motivo:
+          type: string
+      required:
+      - client_id
+      - motivo
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+          writeOnly: true
+      required:
+      - access
+      - refresh
+    UbicacionEnum:
+      enum:
+      - interior
+      - exterior
+      type: string
+      description: |-
+        * `interior` - Interior
+        * `exterior` - Exterior
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+        nombre:
+          type: string
+          readOnly: true
+        apellido:
+          type: string
+          readOnly: true
+        fecha_registro:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - apellido
+      - email
+      - fecha_registro
+      - id
+      - nombre
+    VerifyCode:
+      type: object
+      properties:
+        challenge_id:
+          type: string
+          format: uuid
+        code:
+          type: string
+          pattern: ^\d{6}$
+      required:
+      - challenge_id
+      - code
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

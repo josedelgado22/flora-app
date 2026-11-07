@@ -1,0 +1,60 @@
+{
+  "_contract": "GET /api/v1/plantas/ (OpenAPI 3.0 - HU-FLOR-014). 'ultimo_riego_hace_dias' es solo del mock: plantService lo convierte a 'ultimo_riego' (ISO 8601).",
+  "results": [
+    {
+      "id": 1,
+      "nombre_comun": "Monstera",
+      "nombre_cientifico": "Monstera deliciosa",
+      "categoria": "Tropical",
+      "nivel_luz": "media",
+      "ubicacion": "interior",
+      "frecuencia_riego_dias": 7,
+      "ultimo_riego_hace_dias": 8,
+      "foto_url": null
+    },
+    {
+      "id": 2,
+      "nombre_comun": "Sansevieria",
+      "nombre_cientifico": "Dracaena trifasciata",
+      "categoria": "Suculenta",
+      "nivel_luz": "baja",
+      "ubicacion": "interior",
+      "frecuencia_riego_dias": 14,
+      "ultimo_riego_hace_dias": 10,
+      "foto_url": null
+    },
+    {
+      "id": 3,
+      "nombre_comun": "Lavanda",
+      "nombre_cientifico": "Lavandula angustifolia",
+      "categoria": "Aromática",
+      "nivel_luz": "alta",
+      "ubicacion": "exterior",
+      "frecuencia_riego_dias": 5,
+      "ultimo_riego_hace_dias": 5,
+      "foto_url": null
+    },
+    {
+      "id": 4,
+      "nombre_comun": "Potus",
+      "nombre_cientifico": "Epipremnum aureum",
+      "categoria": "Tropical",
+      "nivel_luz": "baja",
+      "ubicacion": "interior",
+      "frecuencia_riego_dias": 6,
+      "ultimo_riego_hace_dias": 2,
+      "foto_url": null
+    },
+    {
+      "id": 5,
+      "nombre_comun": "Echeveria",
+      "nombre_cientifico": "Echeveria elegans",
+      "categoria": "Suculenta",
+      "nivel_luz": "alta",
+      "ubicacion": "exterior",
+      "frecuencia_riego_dias": 12,
+      "ultimo_riego_hace_dias": null,
+      "foto_url": null
+    }
+  ]
+}

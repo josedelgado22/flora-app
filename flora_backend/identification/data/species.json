@@ -1,0 +1,130 @@
+[
+  {
+    "id": "monstera-deliciosa",
+    "nombre_comun": "Monstera",
+    "nombre_cientifico": "Monstera deliciosa",
+    "categoria": "Tropical",
+    "habito": "trepadora",
+    "nivel_luz_ideal": "media",
+    "ubicacion_ideal": "interior",
+    "frecuencia_riego_dias": 7,
+    "temperatura": "18–27 °C",
+    "consejos": [
+      "Limpia las hojas con un paño húmedo cada 2 semanas.",
+      "Evita el sol directo: quema las hojas."
+    ],
+    "aliases": []
+  },
+  {
+    "id": "sansevieria-trifasciata",
+    "nombre_comun": "Sansevieria",
+    "nombre_cientifico": "Dracaena trifasciata",
+    "categoria": "Suculenta",
+    "habito": "erguida",
+    "nivel_luz_ideal": "baja",
+    "ubicacion_ideal": "interior",
+    "frecuencia_riego_dias": 14,
+    "temperatura": "15–30 °C",
+    "consejos": [
+      "Riega solo cuando el sustrato esté totalmente seco.",
+      "Tolera poca luz, pero crece más con luz indirecta."
+    ],
+    "aliases": ["Sansevieria trifasciata"]
+  },
+  {
+    "id": "potus",
+    "nombre_comun": "Potus",
+    "nombre_cientifico": "Epipremnum aureum",
+    "categoria": "Tropical",
+    "habito": "trepadora",
+    "nivel_luz_ideal": "baja",
+    "ubicacion_ideal": "interior",
+    "frecuencia_riego_dias": 6,
+    "temperatura": "15–29 °C",
+    "consejos": [
+      "Poda las puntas para que se ramifique.",
+      "Las hojas amarillas suelen indicar exceso de agua."
+    ],
+    "aliases": ["Scindapsus aureus", "Pothos aureus", "Rhaphidophora aurea"]
+  },
+  {
+    "id": "lavandula-angustifolia",
+    "nombre_comun": "Lavanda",
+    "nombre_cientifico": "Lavandula angustifolia",
+    "categoria": "Aromática",
+    "habito": "arbustiva",
+    "nivel_luz_ideal": "alta",
+    "ubicacion_ideal": "exterior",
+    "frecuencia_riego_dias": 5,
+    "temperatura": "10–30 °C",
+    "consejos": [
+      "Necesita al menos 6 horas de sol directo.",
+      "Poda después de la floración."
+    ],
+    "aliases": []
+  },
+  {
+    "id": "echeveria-elegans",
+    "nombre_comun": "Echeveria",
+    "nombre_cientifico": "Echeveria elegans",
+    "categoria": "Suculenta",
+    "habito": "roseta",
+    "nivel_luz_ideal": "alta",
+    "ubicacion_ideal": "ambas",
+    "frecuencia_riego_dias": 12,
+    "temperatura": "10–30 °C",
+    "consejos": [
+      "Riega el sustrato, no la roseta.",
+      "Protégela de las heladas."
+    ],
+    "aliases": []
+  },
+  {
+    "id": "aloe-vera",
+    "nombre_comun": "Aloe vera",
+    "nombre_cientifico": "Aloe vera",
+    "categoria": "Suculenta",
+    "habito": "roseta",
+    "nivel_luz_ideal": "alta",
+    "ubicacion_ideal": "ambas",
+    "frecuencia_riego_dias": 14,
+    "temperatura": "13–27 °C",
+    "consejos": [
+      "Usa una maceta con buen drenaje.",
+      "Evita el agua acumulada en el plato."
+    ],
+    "aliases": ["Aloe barbadensis", "Aloe vulgaris"]
+  },
+  {
+    "id": "nephrolepis-exaltata",
+    "nombre_comun": "Helecho de Boston",
+    "nombre_cientifico": "Nephrolepis exaltata",
+    "categoria": "Helecho",
+    "habito": "arbustiva",
+    "nivel_luz_ideal": "media",
+    "ubicacion_ideal": "interior",
+    "frecuencia_riego_dias": 3,
+    "temperatura": "16–24 °C",
+    "consejos": [
+      "Mantén el sustrato siempre ligeramente húmedo.",
+      "Pulveriza sus frondas en ambientes secos."
+    ],
+    "aliases": []
+  },
+  {
+    "id": "ficus-lyrata",
+    "nombre_comun": "Ficus lira",
+    "nombre_cientifico": "Ficus lyrata",
+    "categoria": "Tropical",
+    "habito": "erguida",
+    "nivel_luz_ideal": "media",
+    "ubicacion_ideal": "interior",
+    "frecuencia_riego_dias": 7,
+    "temperatura": "16–27 °C",
+    "consejos": [
+      "No la muevas de lugar con frecuencia.",
+      "Gira la maceta cada mes para que crezca pareja."
+    ],
+    "aliases": ["Ficus pandurata"]
+  }
+]
