@@ -6,7 +6,7 @@ import requests
 
 from identification import plantnet
 
-KEY = 'secret-key-123'
+KEY = '22b10PTGfSjfezwIBNSoIYPv8e'
 
 
 class FakeResponse:

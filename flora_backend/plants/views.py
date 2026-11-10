@@ -1,15 +1,15 @@
-"""Vistas delgadas del jardín: plantas, riegos, rachas, agenda y sincronización (todas con JWT)."""
+"""Vistas delgadas del jardín: plantas, riegos, fotos, rachas, agenda y sincronización (todas con JWT)."""
+from django.utils import timezone
 from drf_spectacular.utils import extend_schema
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from django.utils import timezone
-
-from . import services, sync
-from .models import Plant
+from . import photo_storage, services, sync
+from .models import FotoPlanta, Plant
 from .schema import (
     HORIZON_PARAM,
     PROJECTION_PARAM,
@@ -20,12 +20,17 @@ from .schema import (
     SyncBatchResponse,
 )
 from .serializers import (
+    FotoSerializer,
+    FotoUploadSerializer,
     MascotaSerializer,
     PlantSerializer,
     RiegoCreateSerializer,
     RiegoSerializer,
     SyncBatchSerializer,
 )
+
+MAX_PHOTO_BYTES = 1_000_000
+ALLOWED_PHOTO_TYPES = ('image/jpeg', 'image/png')
 
 
 def parse_horizon(request):
@@ -102,6 +107,36 @@ class PlantViewSet(viewsets.ModelViewSet):
         today = timezone.localdate()
         horizon = parse_horizon(request)
         return Response({'fecha': today, **services.agenda_projection(plant, today, horizon)})
+
+    @extend_schema(
+        request=FotoUploadSerializer,
+        responses={201: FotoSerializer},
+        description='Sube una foto de la planta (multipart: imagen, tipo). JPEG/PNG de máximo 1 MB.',
+    )
+    @action(
+        detail=True,
+        methods=['post'],
+        url_path='fotos',
+        parser_classes=[MultiPartParser, FormParser],
+    )
+    def fotos(self, request, pk=None):
+        """POST /plantas/<id>/fotos/ · sube una foto (HU-FLOR-014)."""
+        plant = self.get_object()  # planta ajena -> 404
+        serializer = FotoUploadSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        archivo = serializer.validated_data['imagen']
+
+        if archivo.size > MAX_PHOTO_BYTES or archivo.content_type not in ALLOWED_PHOTO_TYPES:
+            raise ValidationError({'imagen': ['Debe ser JPEG/PNG de máximo 1 MB.']})
+
+        url = photo_storage.save_photo(plant, archivo)
+        if url.startswith('/'):
+            url = request.build_absolute_uri(url)  # el celular necesita una URL absoluta
+
+        foto = FotoPlanta.objects.create(
+            planta=plant, tipo=serializer.validated_data['tipo'], url=url
+        )
+        return Response(FotoSerializer(foto).data, status=status.HTTP_201_CREATED)
 
 
 class RachaMeView(APIView):

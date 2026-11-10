@@ -2,8 +2,9 @@
  * db.js - Persistencia local Offline-First con expo-sqlite (HU-FLOR-013, SC-02).
  *
  * Tablas:
- *  - plants:     espejo local del catálogo (lectura sin conexión).
- *  - sync_queue: operaciones pendientes de enviar al backend en lote.
+ *  - plants:         espejo local del catálogo (lectura sin conexión).
+ *  - sync_queue:     operaciones pendientes de enviar al backend en lote.
+ *  - pending_photos: fotos pendientes de subir a /plantas/<id>/fotos/ (HU-FLOR-014).
  *
  * Migraciones con PRAGMA user_version. Requiere expo-sqlite (API async, SDK 51+).
  */
@@ -12,6 +13,7 @@ import { addDays, localDayKey } from '../utils/dates';
 
 const DB_NAME = 'flora.db';
 const MAX_ATTEMPTS = 5; // tras 5 rechazos del servidor, la operación se marca 'fallida'
+const MAX_PHOTO_ATTEMPTS = 5; // tras 5 intentos fallidos, la foto deja de reintentarse
 
 let dbPromise = null;
 
@@ -84,6 +86,24 @@ async function openAndMigrate() {
     });
   }
 
+  if (version < 3) {
+    await db.withTransactionAsync(async () => {
+      await db.execAsync(`
+        CREATE TABLE IF NOT EXISTS pending_photos (
+          id            INTEGER PRIMARY KEY AUTOINCREMENT,
+          planta_id     INTEGER NOT NULL,
+          uri           TEXT NOT NULL,
+          tipo          TEXT NOT NULL DEFAULT 'planta',
+          intentos      INTEGER NOT NULL DEFAULT 0,
+          ultimo_error  TEXT,
+          creado_en     TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_pending_photos_planta ON pending_photos (planta_id);
+      `);
+      await db.execAsync('PRAGMA user_version = 3');
+    });
+  }
+
   return db;
 }
 
@@ -93,7 +113,8 @@ async function openAndMigrate() {
 
 /**
  * Inserta/actualiza plantas. Conserva el 'ultimo_riego' local si es más reciente
- * que el del servidor (riego hecho offline que aún no sincroniza).
+ * que el del servidor (riego hecho offline que aún no sincroniza). Conserva también
+ * la foto local mientras el servidor aún no tenga una (foto pendiente de subir).
  * @param {{prune?: boolean}} options prune=true elimina las que ya no existen en el servidor.
  */
 export async function upsertPlants(plants, { prune = false } = {}) {
@@ -113,7 +134,12 @@ export async function upsertPlants(plants, { prune = false } = {}) {
            nivel_luz             = excluded.nivel_luz,
            ubicacion             = excluded.ubicacion,
            frecuencia_riego_dias = excluded.frecuencia_riego_dias,
-           foto_url              = excluded.foto_url,
+           foto_url = CASE
+             WHEN excluded.foto_url IS NULL AND plants.foto_url IS NOT NULL
+              AND plants.foto_url NOT LIKE 'http%'
+             THEN plants.foto_url
+             ELSE excluded.foto_url
+           END,
            ultimo_riego = CASE
              WHEN plants.ultimo_riego IS NOT NULL
               AND (excluded.ultimo_riego IS NULL OR plants.ultimo_riego >= excluded.ultimo_riego)
@@ -294,12 +320,16 @@ export async function insertLocalPlant(planta) {
   return localId;
 }
 
-/** Reemplaza el id local por el definitivo del servidor (también en riegos pendientes). */
+/** Reemplaza el id local por el definitivo del servidor (también en riegos y fotos pendientes). */
 export async function remapPlantId(localId, serverId) {
   const db = await getDb();
 
   await db.withTransactionAsync(async () => {
     await db.runAsync('UPDATE plants SET id = ? WHERE id = ?', [serverId, localId]);
+    await db.runAsync('UPDATE pending_photos SET planta_id = ? WHERE planta_id = ?', [
+      serverId,
+      localId,
+    ]);
 
     const rows = await db.getAllAsync(
       "SELECT id, payload FROM sync_queue WHERE estado = 'pendiente' AND tipo = 'riego'"
@@ -373,4 +403,55 @@ export async function seedDemoStreak(days) {
     });
   }
   await setMeta('demo_streak_seeded', '1');
+}
+
+// ----------------------------------------------------------------------------
+// Fotos pendientes de subir (HU-FLOR-014)
+// ----------------------------------------------------------------------------
+
+/** Encola una foto para subirla cuando la planta ya exista en el servidor. */
+export async function enqueuePhoto(plantId, uri, tipo = 'planta') {
+  if (!uri) return;
+  const db = await getDb();
+  await db.runAsync(
+    'INSERT INTO pending_photos (planta_id, uri, tipo, creado_en) VALUES (?, ?, ?, ?)',
+    [plantId, uri, tipo, new Date().toISOString()]
+  );
+}
+
+/** Solo fotos de plantas que ya existen en el servidor (id positivo). */
+export async function getPendingPhotos(limit = 20) {
+  const db = await getDb();
+  return db.getAllAsync(
+    'SELECT * FROM pending_photos WHERE planta_id > 0 AND intentos < ? ORDER BY id LIMIT ?',
+    [MAX_PHOTO_ATTEMPTS, limit]
+  );
+}
+
+export async function countPendingPhotos() {
+  const db = await getDb();
+  const row = await db.getFirstAsync(
+    'SELECT COUNT(*) AS total FROM pending_photos WHERE intentos < ?',
+    [MAX_PHOTO_ATTEMPTS]
+  );
+  return row?.total ?? 0;
+}
+
+/** Subida exitosa: quita la foto de la cola y deja la URL del servidor como foto de la planta. */
+export async function markPhotoUploaded(photo, serverUrl) {
+  const db = await getDb();
+  await db.withTransactionAsync(async () => {
+    await db.runAsync('DELETE FROM pending_photos WHERE id = ?', [photo.id]);
+    if (photo.tipo === 'planta') {
+      await db.runAsync('UPDATE plants SET foto_url = ? WHERE id = ?', [serverUrl, photo.planta_id]);
+    }
+  });
+}
+
+export async function markPhotoFailed(photoId, message) {
+  const db = await getDb();
+  await db.runAsync(
+    'UPDATE pending_photos SET intentos = intentos + 1, ultimo_error = ? WHERE id = ?',
+    [message ?? 'Error desconocido', photoId]
+  );
 }

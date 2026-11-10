@@ -8,6 +8,10 @@
 import { CATALOGO_SINTOMAS } from '../components/SymptomDiagnosisModal';
 import { request } from './apiClient';
 
+// /diagnostico/ son reglas del servidor (no IA): responde rápido. Si tarda, es mejor caer
+// pronto a las reglas locales que hacer esperar al usuario (por eso NO usa AI_REQUEST_TIMEOUT_MS).
+const DIAGNOSIS_TIMEOUT_MS = 5000;
+
 /** Diagnóstico con las reglas locales (mismo formato que responde el servidor). */
 export function localDiagnosis(sintomaId) {
   const sintoma = CATALOGO_SINTOMAS.find((item) => item.id === sintomaId);
@@ -36,12 +40,12 @@ export async function diagnose(sintomaId, plant = null) {
     const { data, source } = await request('/diagnostico/', {
       method: 'POST',
       body,
-      timeoutMs: 5000,
+      timeoutMs: DIAGNOSIS_TIMEOUT_MS,
       mock: () => localDiagnosis(sintomaId),
     });
     return { ...data, source: source === 'api' ? 'servidor' : 'local' };
   } catch (error) {
-    // Cualquier otro fallo (401, 404...): el usuario igual recibe el diagnóstico local
+    // Cualquier fallo (sin red, timeout, 401, 404...): el usuario igual recibe el diagnóstico local
     console.warn('[Diagnóstico] usando reglas locales:', error?.code ?? error?.message);
     return { ...localDiagnosis(sintomaId), source: 'local' };
   }

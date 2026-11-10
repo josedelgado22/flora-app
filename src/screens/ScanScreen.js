@@ -1,14 +1,15 @@
 /**
  * ScanScreen.js - Captura e Identificación Botánica por Visión Artificial (HU-FLOR-009 / HU-FLOR-010)
- * 
+ *
  * Flujo de Resiliencia ISO/IEC 25010 (SC-01):
  *   - Sin conexión a internet          -> Redirección automática al cuestionario manual (0 ms).
- *   - Respuesta IA < 3.0 s              -> Presentación de candidatos botánicos.
+ *   - Respuesta IA                     -> Presentación de candidatos botánicos.
+ *   - IA no disponible + AI_DEMO_FALLBACK -> Resultados de DEMOSTRACIÓN, avisados al usuario (isDemo).
  *   - Timeout / Error de Red / HTTP 5xx -> Conmutación suave hacia el cuestionario manual.
  *   - Error HTTP 400 (Luminosidad)     -> Alerta visual para reintento con mejor iluminación.
  */
 import React, { useState } from 'react';
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import LoadingState from '../components/LoadingState';
 import PhotoPicker from '../components/PhotoPicker';
 import PrimaryButton from '../components/PrimaryButton';
@@ -37,9 +38,29 @@ export default function ScanScreen({ navigation }) {
 
     setPhase('processing');
     try {
-      const { candidates } = await identifyPlant(picked);
+      const { candidates, isDemo } = await identifyPlant(picked);
       setPhase('idle');
-      navigation.navigate('PlantResult', { photoUri: picked.uri, candidates, estimada: false });
+
+      const goToResult = () =>
+        navigation.navigate('PlantResult', {
+          photoUri: picked.uri,
+          candidates,
+          estimada: false,
+          isDemo,
+        });
+
+      if (isDemo) {
+        // Transparencia: no son una identificación real de la foto.
+        Alert.alert(
+          'Modo demostración',
+          'El servicio de identificación (Pl@ntNet) no está disponible en este momento. ' +
+            'Te mostramos resultados de ejemplo, que no corresponden a una identificación real de tu foto.',
+          [{ text: 'Ver resultados', onPress: goToResult }],
+          { cancelable: false }
+        );
+      } else {
+        goToResult();
+      }
     } catch (error) {
       if (shouldFallbackToQuiz(error)) {
         setPhase('idle');

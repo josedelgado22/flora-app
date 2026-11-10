@@ -19,14 +19,15 @@ import React, {
 } from 'react';
 import { useAuth } from './AuthContext';
 import useNetworkStatus from '../hooks/useNetworkStatus';
+import { fetchPlants, guardarPlantaEnJardin } from '../services/plantService';
+import { flushQueue } from '../services/syncService';
+import { uploadPendingPhotos } from '../services/photoUploadService';
 import {
   countPendingOperations,
   getPlants,
   registerWatering,
   upsertPlants,
 } from '../services/db';
-import { fetchPlants, guardarPlantaEnJardin } from '../services/plantService';
-import { flushQueue } from '../services/syncService';
 
 const PlantsContext = createContext(null);
 
@@ -40,20 +41,28 @@ export function PlantsProvider({ children }) {
   const [error, setError] = useState(null);
   const [source, setSource] = useState('cache'); // 'api' | 'mock' | 'cache'
   const [pendingCount, setPendingCount] = useState(0);
-
+  const [lastWatering, setLastWatering] = useState(null);
   const wasOffline = useRef(false);
 
   const refreshPending = useCallback(async () => {
     setPendingCount(await countPendingOperations());
   }, []);
 
-  /** Envía la cola al backend y actualiza el contador. */
+  /** Envía la cola al backend, sube las fotos pendientes y actualiza el contador. */
   const syncNow = useCallback(async () => {
+    let step = 'flushQueue';
     try {
-      await flushQueue();
+      const { offline } = await flushQueue();
+      step = 'uploadPendingPhotos';
+      if (!offline) await uploadPendingPhotos();
+      step = 'getPlants';
       setPlants(await getPlants()); // ids pueden cambiar al sincronizar
     } catch (e) {
-      console.warn('[Plants] Falló la sincronización:', e);
+      console.warn(
+        `[Plants] Falló la sincronización en "${step}":`,
+        e?.message,
+        String(e?.stack).split('\n').slice(0, 5).join('\n')
+      );
     } finally {
       await refreshPending();
     }
@@ -101,6 +110,7 @@ export function PlantsProvider({ children }) {
   const markWatered = useCallback(
     async (plantId) => {
       await registerWatering(plantId, new Date().toISOString());
+      setLastWatering({ plantId, at: Date.now() });
       setPlants(await getPlants());
       await refreshPending();
       if (isOnline) syncNow();
@@ -157,6 +167,7 @@ export function PlantsProvider({ children }) {
       reload: load,
       markWatered,
       addPlant,
+      lastWatering,
     }),
     [plants, isLoading, isRefreshing, error, source, pendingCount, isOnline, refresh, load, markWatered, addPlant]
   );

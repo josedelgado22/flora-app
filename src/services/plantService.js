@@ -5,7 +5,7 @@
 import plantsMock from '../mocks/plants.json';
 import { REAL_DATA } from '../config/appConfig';
 import { request } from './apiClient';
-import { insertLocalPlant } from './db';
+import { enqueuePhoto, insertLocalPlant } from './db';
 import { persistPhoto } from './photoStorage';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -45,5 +45,7 @@ export async function fetchPlants({ allowMock = true } = {}) {
  */
 export async function guardarPlantaEnJardin(planta) {
   const foto_uri = persistPhoto(planta.foto_uri);
-  return insertLocalPlant({ ...planta, foto_uri });
+  const localId = await insertLocalPlant({ ...planta, foto_uri });
+  await enqueuePhoto(localId, foto_uri); // se sube cuando la planta ya exista en el servidor
+  return localId;
 }

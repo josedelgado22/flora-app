@@ -118,5 +118,185 @@
       "No la muevas de lugar con frecuencia.",
       "Gira la maceta cada mes para que crezca pareja."
     ]
+  },
+  {
+    "id": "zamioculcas-zamiifolia",
+    "nombre_comun": "Zamioculca",
+    "nombre_cientifico": "Zamioculcas zamiifolia",
+    "categoria": "Tropical",
+    "habito": "erguida",
+    "nivel_luz_ideal": "baja",
+    "ubicacion_ideal": "interior",
+    "frecuencia_riego_dias": 14,
+    "temperatura": "18–30 °C",
+    "consejos": [
+      "Riega solo cuando el sustrato esté seco: tolera el olvido.",
+      "Tolera poca luz, pero crece mejor con luz indirecta."
+    ]
+  },
+  {
+    "id": "chlorophytum-comosum",
+    "nombre_comun": "Cinta",
+    "nombre_cientifico": "Chlorophytum comosum",
+    "categoria": "Tropical",
+    "habito": "arbustiva",
+    "nivel_luz_ideal": "media",
+    "ubicacion_ideal": "interior",
+    "frecuencia_riego_dias": 7,
+    "temperatura": "13–27 °C",
+    "consejos": [
+      "Produce hijuelos que puedes replantar en otra maceta.",
+      "Las puntas marrones suelen indicar aire seco."
+    ]
+  },
+  {
+    "id": "spathiphyllum-wallisii",
+    "nombre_comun": "Cuna de Moisés",
+    "nombre_cientifico": "Spathiphyllum wallisii",
+    "categoria": "Tropical",
+    "habito": "erguida",
+    "nivel_luz_ideal": "media",
+    "ubicacion_ideal": "interior",
+    "frecuencia_riego_dias": 5,
+    "temperatura": "16–28 °C",
+    "consejos": [
+      "Sus hojas se caen cuando le falta agua y se recuperan al regar.",
+      "Florece mejor con luz indirecta brillante."
+    ]
+  },
+  {
+    "id": "crassula-ovata",
+    "nombre_comun": "Árbol de jade",
+    "nombre_cientifico": "Crassula ovata",
+    "categoria": "Suculenta",
+    "habito": "arbustiva",
+    "nivel_luz_ideal": "alta",
+    "ubicacion_ideal": "ambas",
+    "frecuencia_riego_dias": 14,
+    "temperatura": "10–27 °C",
+    "consejos": [
+      "Riega cuando el sustrato esté seco; el exceso de agua pudre las raíces.",
+      "Necesita mucha luz para mantener hojas firmes."
+    ]
+  },
+  {
+    "id": "phalaenopsis",
+    "nombre_comun": "Orquídea mariposa",
+    "nombre_cientifico": "Phalaenopsis spp.",
+    "categoria": "Tropical",
+    "habito": "roseta",
+    "nivel_luz_ideal": "media",
+    "ubicacion_ideal": "interior",
+    "frecuencia_riego_dias": 7,
+    "temperatura": "18–28 °C",
+    "consejos": [
+      "Sumerge la maceta unos 10 minutos y deja escurrir bien.",
+      "No dejes agua acumulada en el centro de las hojas."
+    ]
+  },
+  {
+    "id": "ficus-benjamina",
+    "nombre_comun": "Ficus benjamina",
+    "nombre_cientifico": "Ficus benjamina",
+    "categoria": "Tropical",
+    "habito": "arbustiva",
+    "nivel_luz_ideal": "media",
+    "ubicacion_ideal": "interior",
+    "frecuencia_riego_dias": 7,
+    "temperatura": "16–27 °C",
+    "consejos": [
+      "Los cambios de lugar le hacen soltar hojas: déjalo fijo.",
+      "Evita corrientes de aire frío."
+    ]
+  },
+  {
+    "id": "philodendron-hederaceum",
+    "nombre_comun": "Filodendro corazón",
+    "nombre_cientifico": "Philodendron hederaceum",
+    "categoria": "Tropical",
+    "habito": "trepadora",
+    "nivel_luz_ideal": "media",
+    "ubicacion_ideal": "interior",
+    "frecuencia_riego_dias": 7,
+    "temperatura": "16–29 °C",
+    "consejos": [
+      "Ofrécele un tutor o cuélgalo para que crezca.",
+      "Riega cuando los primeros centímetros del sustrato estén secos."
+    ]
+  },
+  {
+    "id": "ocimum-basilicum",
+    "nombre_comun": "Albahaca",
+    "nombre_cientifico": "Ocimum basilicum",
+    "categoria": "Aromática",
+    "habito": "arbustiva",
+    "nivel_luz_ideal": "alta",
+    "ubicacion_ideal": "ambas",
+    "frecuencia_riego_dias": 2,
+    "temperatura": "18–30 °C",
+    "consejos": [
+      "Pellizca las puntas para que se ramifique y no florezca.",
+      "No tolera el frío: protégela bajo 10 °C."
+    ]
+  },
+  {
+    "id": "mentha-spicata",
+    "nombre_comun": "Menta",
+    "nombre_cientifico": "Mentha spicata",
+    "categoria": "Aromática",
+    "habito": "arbustiva",
+    "nivel_luz_ideal": "media",
+    "ubicacion_ideal": "ambas",
+    "frecuencia_riego_dias": 3,
+    "temperatura": "10–28 °C",
+    "consejos": [
+      "Plántala sola en su maceta: invade a otras plantas.",
+      "Mantén el sustrato húmedo, sin encharcar."
+    ]
+  },
+  {
+    "id": "salvia-rosmarinus",
+    "nombre_comun": "Romero",
+    "nombre_cientifico": "Salvia rosmarinus",
+    "categoria": "Aromática",
+    "habito": "arbustiva",
+    "nivel_luz_ideal": "alta",
+    "ubicacion_ideal": "exterior",
+    "frecuencia_riego_dias": 7,
+    "temperatura": "8–30 °C",
+    "consejos": [
+      "Necesita sol directo y un sustrato que drene muy bien.",
+      "Es resistente a la sequía: no lo riegues en exceso."
+    ]
+  },
+  {
+    "id": "kalanchoe-blossfeldiana",
+    "nombre_comun": "Kalanchoe",
+    "nombre_cientifico": "Kalanchoe blossfeldiana",
+    "categoria": "Suculenta",
+    "habito": "arbustiva",
+    "nivel_luz_ideal": "alta",
+    "ubicacion_ideal": "interior",
+    "frecuencia_riego_dias": 10,
+    "temperatura": "15–30 °C",
+    "consejos": [
+      "Retira las flores marchitas para alargar la floración.",
+      "Riega el sustrato, no las hojas ni las flores."
+    ]
+  },
+  {
+    "id": "echinocactus-grusonii",
+    "nombre_comun": "Asiento de suegra",
+    "nombre_cientifico": "Echinocactus grusonii",
+    "categoria": "Suculenta",
+    "habito": "roseta",
+    "nivel_luz_ideal": "alta",
+    "ubicacion_ideal": "ambas",
+    "frecuencia_riego_dias": 21,
+    "temperatura": "10–35 °C",
+    "consejos": [
+      "Riega muy poco, y casi nada en invierno.",
+      "Necesita pleno sol y una maceta con mucho drenaje."
+    ]
   }
 ]

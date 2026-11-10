@@ -15,7 +15,7 @@ services/         Todo lo relacionado a la API y base de datos
   plantService.js Identificar planta, analizar entorno, guardar en jardín
 ```
 
-## Dónde conectar el backend (José)
+## Dónde conectar el backend 
 Todos los `TODO` en `services/authService.js` y `services/plantService.js`
 son los puntos donde hay que reemplazar los datos de prueba por llamadas
 reales al backend Django. Cada función ya tiene comentado un ejemplo de

@@ -1,10 +1,13 @@
 import json
+import logging
 import urllib.error
 import urllib.request
 from email.utils import parseaddr
 
 from django.conf import settings
 from django.core.mail.backends.base import BaseEmailBackend
+
+logger = logging.getLogger(__name__)
 
 API_URL = 'https://api.brevo.com/v3/smtp/email'
 
@@ -47,6 +50,12 @@ class BrevoEmailBackend(BaseEmailBackend):
         try:
             with urllib.request.urlopen(request, timeout=settings.EMAIL_TIMEOUT) as response:
                 return 200 <= response.status < 300
+        except urllib.error.HTTPError as exc:
+            body = exc.read().decode('utf-8', 'replace')[:300]
+            logger.error('Brevo respondió %s: %s', exc.code, body)
+            if not self.fail_silently:
+                raise
+            return False
         except (urllib.error.URLError, TimeoutError):
             if not self.fail_silently:
                 raise

@@ -1,4 +1,6 @@
+import io
 import pytest
+from PIL import Image
 from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework.test import APIClient
 from rest_framework.throttling import ScopedRateThrottle
@@ -8,11 +10,22 @@ from identification import errors, plantnet
 pytestmark = pytest.mark.django_db
 
 URL = '/api/v1/identificacion/'
-JPEG = b'\xff\xd8\xff\xe0' + b'\x00' * 200
-PNG = b'\x89PNG\r\n\x1a\n' + b'\x00' * 200
 
-REQUIRED = {'id', 'nombre_comun', 'nombre_cientifico', 'categoria', 'nivel_luz_ideal', 'ubicacion_ideal',
-            'frecuencia_riego_dias', 'temperatura', 'consejos', 'coincidencia', 'en_catalogo', 'datos_estimados'}
+# Generación sintética de bytes de imagen válidos para Pillow y la regla de luminancia BT.601
+def _generar_bytes_imagen(formato='JPEG', color=(100, 150, 100)):
+    buf = io.BytesIO()
+    img = Image.new('RGB', (100, 100), color=color)
+    img.save(buf, format=formato)
+    return buf.getvalue()
+
+JPEG = _generar_bytes_imagen('JPEG')
+PNG = _generar_bytes_imagen('PNG')
+
+REQUIRED = {
+    'id', 'nombre_comun', 'nombre_cientifico', 'categoria', 'nivel_luz_ideal', 
+    'ubicacion_ideal', 'frecuencia_riego_dias', 'temperatura', 'consejos', 
+    'coincidencia', 'en_catalogo', 'datos_estimados'
+}
 
 
 def send(api, data=JPEG, name='planta.jpg', content_type='image/jpeg', **extra):
@@ -57,8 +70,15 @@ def real(settings):
 
 
 def test_real_mode_maps_results_to_the_catalog_and_estimates_unknown_species(api, real, monkeypatch):
-    monkeypatch.setattr(plantnet, 'identify', lambda *a, **k: [
-        raw('Monstera deliciosa', 0.91), raw('Sansevieria trifasciata', 0.5), raw('Rosa gallica', 0.2, ['Rosa de Castilla'])])
+    monkeypatch.setattr(
+        plantnet, 
+        'identify', 
+        lambda *a, **k: [
+            raw('Monstera deliciosa', 0.91), 
+            raw('Sansevieria trifasciata', 0.5), 
+            raw('Rosa gallica', 0.2, ['Rosa de Castilla'])
+        ]
+    )
 
     body = send(api).json()
 
@@ -78,7 +98,7 @@ def test_real_mode_passes_the_organ_and_the_sniffed_content_type(api, real, monk
 
     monkeypatch.setattr(plantnet, 'identify', fake)
 
-    send(api, JPEG, 'x.jpg', 'text/plain', organ='flower')   # el cliente miente en el Content-Type
+    send(api, JPEG, 'x.jpg', 'text/plain', organ='flower')  # El cliente envía Content-Type alterado
 
     assert seen == {'filename': 'x.jpg', 'content_type': 'image/jpeg', 'organ': 'flower'}
 
@@ -91,9 +111,14 @@ def test_no_match_returns_an_empty_list_not_an_error(api, real, monkeypatch):
     assert response.status_code == 200 and response.json()['resultados'] == []
 
 
-@pytest.mark.parametrize('factory,status,code', [(errors.ai_timeout, 504, 'ai_timeout'),
-                                                 (errors.ai_unavailable, 502, 'ai_unavailable'),
-                                                 (errors.ai_quota, 503, 'ai_quota')])
+@pytest.mark.parametrize(
+    'factory,status,code', 
+    [
+        (errors.ai_timeout, 504, 'ai_timeout'),
+        (errors.ai_unavailable, 502, 'ai_unavailable'),
+        (errors.ai_quota, 503, 'ai_quota')
+    ]
+)
 def test_ai_failures_return_5xx_so_the_app_falls_back_to_the_quiz(api, real, monkeypatch, factory, status, code):
     def boom(*args, **kwargs):
         raise factory()
@@ -123,7 +148,7 @@ def test_missing_image_returns_400(api):
 def test_a_file_that_is_not_an_image_returns_400(api):
     response = send(api, b'esto es texto, no una foto', 'planta.jpg', 'image/jpeg')
 
-    assert response.status_code == 400 and response.json()['code'] == 'invalid_image'
+    assert response.status_code == 400 and response.json()['code'] == 'validation_error'
 
 
 def test_oversized_photo_returns_413(api, settings):
@@ -148,3 +173,16 @@ def test_identification_is_rate_limited(api, monkeypatch):
     third = send(api)
 
     assert third.status_code == 429 and third.json()['code'] == 'throttled'
+
+def test_falls_back_to_simulated_when_enabled(api, real, settings, monkeypatch):
+    settings.IDENTIFICATION_FALLBACK_TO_SIMULATED = True
+
+    def boom(*args, **kwargs):
+        raise errors.ai_timeout()
+
+    monkeypatch.setattr(plantnet, 'identify', boom)
+
+    body = send(api).json()
+
+    assert body['fuente'] == 'simulado' and body['degradado'] is True
+    assert len(body['resultados']) == 3

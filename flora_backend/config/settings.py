@@ -6,12 +6,31 @@ Configuración de F.L.O.R.A. (Django REST Framework).
 Todo lo sensible se lee de variables de entorno (ver .env.example).
 """
 import os
+import sys
 from datetime import timedelta
 from pathlib import Path
 
+BASE_DIR = Path(__file__).resolve().parent.parent  # ya debería existir
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
 import dj_database_url
 from django.core.exceptions import ImproperlyConfigured
+# Detectar automáticamente si PyTest o manage.py test está ejecutándose
+TESTING = 'pytest' in sys.modules or 'test' in sys.argv
 
+if TESTING:
+    # En pruebas locales dentro de Docker desactivamos forzado HTTPS (evita HTTP 301)
+    SECURE_SSL_REDIRECT = False
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
+else:
+    # En ejecución normal o producción lee la variable del entorno sin usar 'env'
+    SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', 'False').lower() in ('true', '1', 't')
+# Clave de API de Pl@ntNet inyectada dinámicamente desde el entorno
+PLANTNET_API_KEY = os.getenv('PLANTNET_API_KEY', '')
+IDENTIFICATION_MODE = os.getenv('IDENTIFICATION_MODE', 'simulated')
 try:
     from dotenv import load_dotenv
 except ImportError:  # pragma: no cover - python-dotenv es opcional
@@ -247,3 +266,10 @@ PLANTNET_MAX_RESULTS = env_int('PLANTNET_MAX_RESULTS', 3)
 PLANTNET_TIMEOUT_SECONDS = float(os.getenv('PLANTNET_TIMEOUT_SECONDS', '2.2'))
 IDENTIFICATION_MODE = os.getenv('IDENTIFICATION_MODE', 'auto')  # auto | simulated
 IDENTIFICATION_MAX_IMAGE_BYTES = env_int('IDENTIFICATION_MAX_IMAGE_BYTES', 1_000_000)  # SC-05: < 1 MB
+
+
+SUPABASE_URL = os.getenv('SUPABASE_URL', '').rstrip('/')
+SUPABASE_SERVICE_KEY = os.getenv('SUPABASE_SERVICE_KEY', '')
+SUPABASE_BUCKET = os.getenv('SUPABASE_BUCKET', 'plant-photos')
+SUPABASE_TIMEOUT = float(os.getenv('SUPABASE_TIMEOUT', '8'))
+PHOTO_MAX_BYTES = env_int('PHOTO_MAX_BYTES', 3_000_000)

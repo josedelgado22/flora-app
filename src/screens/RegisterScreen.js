@@ -50,6 +50,16 @@ export default function RegisterScreen({ navigation }) {
     setSubmitting(true);
     try {
       const data = await register(values);
+
+      // Respuesta sin challenge_id: algo contestó, pero no fue el backend esperado
+      if (!data?.challenge_id) {
+        console.warn('[Register] respuesta inesperada del servidor:', JSON.stringify(data));
+        setFormError(
+          'El servidor respondió algo inesperado. Revisa que la app apunte al backend y que Django esté activo.'
+        );
+        return;
+      }
+
       // La cuenta queda pendiente hasta confirmar el código enviado al correo (doble factor)
       navigation.navigate('VerifyCode', {
         challenge: toChallenge(data),
@@ -58,8 +68,10 @@ export default function RegisterScreen({ navigation }) {
       });
     } catch (error) {
       console.warn('[Register] error:', error?.code, error?.status, error?.message);
+      const showServerMessage =
+        [400, 409, 429, 503].includes(error?.status) || error?.code === 'invalid_response';
       setFormError(
-        [400, 409, 429, 503].includes(error.status)
+        showServerMessage
           ? error.message
           : 'No pudimos crear tu cuenta. Revisa tu conexión e inténtalo de nuevo.'
       );

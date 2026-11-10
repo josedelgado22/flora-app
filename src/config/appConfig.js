@@ -1,17 +1,21 @@
 /**
- * appConfig.js - Configuración central de la app.
- * Cambia FORCE_MOCKS a false cuando el backend (Render) esté desplegado.
+ * appConfig.js - Configuración centralizada de F.L.O.R.A.
+ *
+ * Estrategia de Red (en este orden):
+ * 1. EXPO_PUBLIC_API_URL (archivo flora_app/.env): manda sobre todo lo demás. Úsala para probar
+ *    Expo Go contra Render:  EXPO_PUBLIC_API_URL=https://TU-SERVICIO.onrender.com/api/v1
+ * 2. Desarrollo local (__DEV__, Expo Go por LAN): detecta la IP de la PC desde Expo
+ *    (ej: 192.168.1.9) y usa el puerto de DEV_API_PORT.
+ * 3. APK / build de producción: usa PROD_API_URL (el backend en Render).
  */
 import Constants from 'expo-constants';
 
-// URL base del API REST de Django.
-//  - Desarrollo (Expo Go, red local o hotspot): se detecta SOLA con la IP de la PC que Expo
-//    ya conoce (la misma del QR). No hay que editarla cuando cambia la red.
-//  - Producción (APK): PROD_API_URL (cámbiala por la URL HTTPS de Render).
-//  - Forzar una dirección: define EXPO_PUBLIC_API_URL antes de iniciar Expo.
-// Con "expo start --tunnel" la detección apunta al túnel: usa el modo LAN normal.
-const DEV_API_PORT = 8000;
-const PROD_API_URL = 'https://TU-SERVICIO.onrender.com/api/v1';
+// Puerto 8001 para evitar colisiones con Docker o servicios del SO (solo desarrollo local)
+export const DEV_API_PORT = 8001;
+
+// Backend desplegado en Render (HTTPS). AJUSTA el nombre al de tu servicio real:
+// la URL aparece en el panel de Render, arriba, con la forma https://NOMBRE.onrender.com
+export const PROD_API_URL = 'https://flora-backend-api.onrender.com/api/v1';
 
 function resolveApiBaseUrl() {
   if (process.env.EXPO_PUBLIC_API_URL) return process.env.EXPO_PUBLIC_API_URL;
@@ -19,7 +23,7 @@ function resolveApiBaseUrl() {
   if (__DEV__) {
     const host = Constants.expoConfig?.hostUri?.split(':')[0];
     if (host) return `http://${host}:${DEV_API_PORT}/api/v1`;
-    return `http://10.0.2.2:${DEV_API_PORT}/api/v1`; // emulador Android sin hostUri
+    return `http://10.0.2.2:${DEV_API_PORT}/api/v1`;
   }
 
   return PROD_API_URL;
@@ -27,53 +31,56 @@ function resolveApiBaseUrl() {
 
 export const API_BASE_URL = resolveApiBaseUrl();
 
-// SC-01: tiempo máximo de espera antes de considerar la llamada fallida.
+if (__DEV__) {
+  console.log(`[config] API_BASE_URL = ${API_BASE_URL}`);
+}
+
+// SC-01: Tiempo máximo de espera para endpoints generales (catálogo, sync, riegos).
+// No se sube a propósito: es un requisito. El arranque en frío de Render se cubre con
+// warmUpServer() (ver WARMUP_TIMEOUT_MS), no alargando este límite.
 export const REQUEST_TIMEOUT_MS = 3000;
 
-// true  = modo demo: todo se resuelve con mocks/ (Contract-First)
-// false = intenta el API real y cae a mocks solo donde está permitido
-export const FORCE_MOCKS = true;
+// Render (plan gratuito) duerme el servicio tras ~15 min sin uso y tarda cerca de 1 minuto en despertar.
+// Al abrir la app se le hace un ping a /health/ con este margen, sin bloquear la interfaz.
+export const WARMUP_TIMEOUT_MS = 60000;
 
-// Latencia simulada de los mocks (para ver estados de carga)
+// Las llamadas a la IA (diagnóstico / identificación, con imagen) necesitan más margen que SC-01.
+// Úsalo así: request('/identificacion/...', { ..., timeoutMs: AI_REQUEST_TIMEOUT_MS })
+export const AI_REQUEST_TIMEOUT_MS = 20000;
+
+// Qué hacer cuando la IA (Pl@ntNet) no está disponible:
+//   false -> conmutar al cuestionario manual (SC-01, resiliencia real)
+//   true  -> mostrar resultados de DEMOSTRACIÓN del catálogo local, marcados como tales en pantalla
+export const AI_DEMO_FALLBACK = true;
+
+// Modo Mocks: al estar en false, todo el tráfico consume la API real de Django
+export const FORCE_MOCKS = false;
+
+// Latencia simulada para pruebas de interfaz visual
 export const MOCK_LATENCY_MS = 500;
 
-// Demo del flujo de IA (solo con FORCE_MOCKS = true): 'ok' | 'timeout' | 'offline'
-//  'timeout' simula que Pl@ntNet supera los 3 s -> la app salta al cuestionario (SC-01).
+// Configuración de demostración de IA
 export const DEMO_AI_MODE = 'ok';
 
-// SC-05: tope de peso de la foto enviada a la IA (< 1 MB, con margen)
+// SC-05: Límite de peso para fotografías foliares (OWASP M7: < 950 KB)
 export const MAX_UPLOAD_BYTES = 950000;
 
-// Demo de rachas (solo con FORCE_MOCKS = true): siembra N días de riegos previos
-// (hasta ayer) la primera vez, para que la mascota ya muestre una racha en la demo.
-// Pon 0 para empezar desde cero. Los días sembrados NO se sincronizan al backend.
+// Racha inicial simulada para demostraciones
 export const DEMO_SEED_STREAK_DAYS = 6;
 
-// Hora local (0-23) de los recordatorios de riego
+// Configuración de recordatorios de riego (09:00 AM)
 export const REMINDER_HOUR = 9;
 
-// Doble factor (solo mocks): si es true, el login demo exige un código de 6 dígitos.
-// Pon false para una demo más rápida (el flujo 2FA queda implementado igual).
+// Doble Factor (2FA)
 export const MOCK_REQUIRE_2FA = true;
-
-// Código válido en modo demo (FORCE_MOCKS). Con el backend real lo envía por correo.
 export const DEMO_2FA_CODE = '123456';
 
-// Autenticación REAL contra el backend Django (registro, login y doble factor por correo)
-// aunque FORCE_MOCKS siga en true: el resto de la app (plantas, agenda, IA) sigue con datos de demostración.
-// Pon false para volver a la autenticación simulada (código 123456).
+// Habilitación de endpoints reales contra Django REST
 export const REAL_AUTH = true;
+export const AUTH_REQUEST_TIMEOUT_MS = 20000; // Tolerancia para envío de correos 2FA (y arranque en frío de Render)
+export const REAL_DATA = true; // Sincronización activa contra PostgreSQL
 
-// Las rutas /auth/ envían un correo por SMTP: pueden tardar más que los 3 s de REQUEST_TIMEOUT_MS
-// (que se reserva a la IA, SC-01). Con Render gratis, el primer arranque puede tardar ~30-50 s.
-export const AUTH_REQUEST_TIMEOUT_MS = 20000;
-
-// Datos REALES (plantas, riegos, rachas, agenda y sincronización) contra el backend Django (Fase 2).
-// Déjalo en false hasta que el backend tenga aplicadas las migraciones de la app "plants"
-// (python manage.py migrate). Con true, el jardín de cada usuario vive en el servidor.
-export const REAL_DATA = true;
-
-// Rutas que van al backend aunque FORCE_MOCKS sea true (todo lo demás sigue con datos de demostración).
+// Rutas derivadas al backend Django
 export const REAL_PATH_PREFIXES = [
   ...(REAL_AUTH ? ['/auth/'] : []),
   ...(REAL_DATA ? ['/plantas/', '/sync/', '/rachas/', '/agenda/', '/diagnostico/', '/identificacion/'] : []),

@@ -2,6 +2,8 @@
 identification/views.py - Proxy Seguro e Inspección Binaria de Fotografía (HU-FLOR-009).
 Alineado con Rúbrica Duoc UC: IE 3 (OpenAPI 3.0), IE 6 (QA), IE 7 (OWASP M7) e IE 8 (ISO/IEC 25010).
 """
+from django.shortcuts import get_object_or_404
+from plants import photo_storage
 from drf_spectacular.utils import extend_schema, OpenApiTypes, inline_serializer
 from rest_framework import serializers
 from rest_framework.parsers import MultiPartParser

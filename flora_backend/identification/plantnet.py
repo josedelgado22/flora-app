@@ -5,6 +5,9 @@ IMPORTANTE: escrito a partir de la documentación conocida de Pl@ntNet (no se pu
 Cuando su sitio esté disponible, confirma: URL (PLANTNET_API_URL), parámetros api-key / lang / nb-results,
 el campo multipart `images` + `organs`, y el formato de respuesta (parsing.py). Todo es ajustable por
 variables de entorno o en este archivo, sin tocar la app móvil.
+
+Timeouts: requests.ConnectTimeout también es un requests.Timeout, así que un connect timeout
+demasiado corto se reporta como "ai_timeout" (504). El de lectura sale de PLANTNET_TIMEOUT_SECONDS.
 """
 import logging
 
@@ -16,7 +19,8 @@ from .parsing import parse_response
 
 logger = logging.getLogger(__name__)
 
-CONNECT_TIMEOUT_SECONDS = 1.0
+# Establecer la conexión TLS con Pl@ntNet desde una PC doméstica puede tardar más de 1 s.
+CONNECT_TIMEOUT_SECONDS = 3.0
 
 
 def identify(image_bytes, filename, content_type, organ='auto'):
@@ -37,7 +41,8 @@ def identify(image_bytes, filename, content_type, organ='auto'):
             data={'organs': organ},
             timeout=(CONNECT_TIMEOUT_SECONDS, settings.PLANTNET_TIMEOUT_SECONDS),
         )
-    except requests.Timeout:
+    except requests.Timeout as exc:
+        logger.warning('Pl@ntNet timeout (%s)', type(exc).__name__)  # ConnectTimeout o ReadTimeout
         raise errors.ai_timeout()
     except requests.RequestException as exc:
         # Solo el tipo de error: el mensaje de requests puede incluir la URL con la clave.

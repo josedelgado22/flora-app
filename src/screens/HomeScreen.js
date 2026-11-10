@@ -1,27 +1,23 @@
 /**
  * HomeScreen.js - Tab "Jardín" (diseño original de F.L.O.R.A.).
  * Datos: PlantsContext (SQLite + API/mock). Riego offline-safe (SC-02).
- * Mascota, racha y tira semanal: PetContext (FSM de Espina + rachas reales, HU-FLOR-004).
+ * Mascota y racha: PetContext (FSM de Espina + rachas reales, HU-FLOR-004).
+ * Imagen de la mascota: DynamicPlantMascot. Últimos 7 días: WeekStrip.
  */
 import React, { useCallback } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ConnectionBanner from '../components/ConnectionBanner';
+import DynamicPlantMascot from '../components/DynamicPlantMascot';
 import ErrorState from '../components/ErrorState';
 import LoadingState from '../components/LoadingState';
 import PlantCard from '../components/PlantCard';
+import WeekStrip from '../components/WeekStrip';
 import { useAuth } from '../context/AuthContext';
 import { usePet } from '../context/PetContext';
 import { usePlants } from '../context/PlantsContext';
 import { colors } from '../theme/theme';
-
-// Mientras la racha carga (SQLite) se dibujan 7 círculos vacíos para que el diseño no salte
-const PLACEHOLDER_WEEK = ['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((label, index) => ({
-  label,
-  key: `placeholder-${index}`,
-  done: false,
-  isToday: false,
-}));
+import { MOODS } from '../utils/petFsm';
 
 export default function HomeScreen({ navigation }) {
   const { user } = useAuth();
@@ -36,11 +32,11 @@ export default function HomeScreen({ navigation }) {
     refresh,
     reload,
     markWatered,
+    lastWatering,
   } = usePlants();
-  const { name, streak, statusText, counts } = usePet();
+  const { name, mood, streak, statusText, counts } = usePet();
 
   const pendingToday = counts.due + counts.overdue;
-  const week = streak.week.length > 0 ? streak.week : PLACEHOLDER_WEEK;
 
   // La celebración de Espina y la racha se actualizan solas: PlantsContext emite lastWatering.
   const handleWater = useCallback(
@@ -91,28 +87,26 @@ export default function HomeScreen({ navigation }) {
                 🔥 {streak.current} {streak.current === 1 ? 'día' : 'días'}
               </Text>
             </View>
-            <View style={styles.cactusIcon}>
-              <Text style={styles.cactusEmoji}>🌵</Text>
-            </View>
+
+            <DynamicPlantMascot
+              due={counts.due}
+              overdue={counts.overdue}
+              streakDays={streak.current}
+              isCelebrating={mood === MOODS.CELEBRANDO}
+              resizeMode="cover"
+              style={styles.mascotImage}
+            />
+
             <Text style={styles.mascotName}>{name}</Text>
             <Text style={styles.mascotStatus}>{statusText}</Text>
           </View>
 
-          {/* Tira semanal (días con riego registrado) */}
-          <View style={styles.weekRow}>
-            {week.map((day) => (
-              <View key={day.key} style={styles.dayPill}>
-                <Text style={styles.dayLabel}>{day.label}</Text>
-                <View
-                  style={[
-                    styles.dayDot,
-                    day.done && styles.dayDotDone,
-                    day.isToday && styles.dayDotToday,
-                  ]}
-                />
-              </View>
-            ))}
-          </View>
+          {/* Últimos 7 días con riego (se relee al regar o al cambiar la racha) */}
+          <WeekStrip
+            style={styles.weekStrip}
+            streak={streak}
+            refreshKey={`${streak.current}:${lastWatering?.at ?? 0}`}
+          />
 
           <Text style={styles.sectionTitle}>Mi jardín</Text>
 
@@ -154,7 +148,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     borderRadius: 20,
     marginTop: 16,
-    padding: 22,
+    paddingHorizontal: 22,
+    paddingTop: 34,
+    paddingBottom: 22,
     alignItems: 'center',
   },
   streakPill: {
@@ -167,31 +163,18 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
   },
   streakText: { color: '#FFFFFF', fontSize: 12, fontWeight: '600' },
-  cactusIcon: {
-    width: 60,
-    height: 60,
+  // La imagen lleva su propio borde redondo (sin recorte, así el salto de la celebración no se corta)
+  mascotImage: {
+    width: 116,
+    height: 116,
+    borderRadius: 58,
+    borderWidth: 4,
+    borderColor: '#FFFFFF',
     backgroundColor: '#FFFFFF',
-    borderRadius: 30,
-    marginBottom: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
-  cactusEmoji: { fontSize: 32 },
-  mascotName: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
+  mascotName: { color: '#FFFFFF', fontSize: 17, fontWeight: '700', marginTop: 10 },
   mascotStatus: { color: '#EEF3E6', fontSize: 12, marginTop: 2 },
-  weekRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 16 },
-  dayPill: { alignItems: 'center' },
-  dayLabel: { fontSize: 10, color: colors.textMuted, marginBottom: 6 },
-  dayDot: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    borderWidth: 1,
-    borderColor: '#E4A2A3',
-    backgroundColor: '#FFFFFF',
-  },
-  dayDotDone: { backgroundColor: colors.primary, borderColor: colors.primary },
-  dayDotToday: { borderWidth: 2, borderColor: colors.accent },
+  weekStrip: { marginTop: 16 },
   sectionTitle: { fontSize: 14, fontWeight: '700', color: '#000000', marginTop: 22, marginBottom: 10 },
   empty: { fontSize: 13, color: colors.textMuted, marginBottom: 12 },
   scanButton: {

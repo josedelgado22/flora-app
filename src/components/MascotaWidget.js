@@ -1,215 +1,162 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { 
-  View, 
-  Text, 
-  Image, 
-  TouchableOpacity, 
-  StyleSheet, 
-  Animated, 
-  Easing,
-  Modal,
-  TextInput,
-  Pressable
-} from 'react-native';
-
+// flora_app/src/components/MascotaWidget.js
 /**
- * Componente: MascotaWidget (Evolutiva & Animada)
- * Gamificación y Retención mediante hábitos de riego.
+ * MascotaWidget - Botón flotante de Espina (Agenda), conectado a PetContext.
+ *
+ * Ahora todo sale de usePet(): nombre (se guarda al renombrar), racha real, etapa evolutiva,
+ * estado de riego y la expresión del cactus (DynamicPlantMascot). Ya no usa el icono de la app.
+ *
+ * Props:
+ *   onAlimentar  se llama al pulsar "Alimentar (Registrar riego)"
+ * (nombreInicial, racha y estado de la versión anterior ya no hacen falta; si se pasan, se ignoran)
  */
-export default function MascotaWidget({ 
-  nombreInicial = "Espina", 
-  racha = 12, 
-  estado = "happy", // 'happy' | 'hungry' | 'critical'
-  onAlimentar 
-}) {
-  const [nombre, setNombre] = useState(nombreInicial);
+import React, { useRef, useState } from 'react';
+import { Animated, Modal, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { usePet } from '../context/PetContext';
+import { MOODS, RENAME_UNLOCK_DAYS } from '../utils/petFsm';
+import DynamicPlantMascot from './DynamicPlantMascot';
+
+export default function MascotaWidget({ onAlimentar }) {
+  const { name, stage, mood, streak, statusText, counts, renamePet } = usePet();
+
   const [modalVisible, setModalVisible] = useState(false);
-  const [modoEdicion, setModoEdicion] = useState(false);
-  const [nuevoNombreInput, setNuevoNombreInput] = useState("");
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState('');
+  const press = useRef(new Animated.Value(1)).current;
 
-  // --- ANIMACIONES CON REACT NATIVE NATIVE DRIVER ---
-  const animFlotacion = useRef(new Animated.Value(0)).current;
-  const animEscala = useRef(new Animated.Value(1)).current;
+  const pending = counts.due + counts.overdue;
+  const needsWater = pending > 0;
+  const canRename = streak.best >= RENAME_UNLOCK_DAYS;
 
-  useEffect(() => {
-    // Animación de "Respiración / Flotación Continua"
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(animFlotacion, {
-          toValue: -8,
-          duration: 1200,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-        Animated.timing(animFlotacion, {
-          toValue: 0,
-          duration: 1200,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-  }, []);
-
-  // Algoritmo de Evolución y Recompensas por Racha
-  const obtenerEtapaEvolutiva = (diasRacha) => {
-    if (diasRacha >= 30) {
-      return { nivel: 4, etapa: "Guardiana Leyenda", icono: "👑", color: "#FFD700", permiteRenombrar: true };
-    }
-    if (diasRacha >= 14) {
-      return { nivel: 3, etapa: "Cactus Florecido", icono: "🌸", color: "#E91E63", permiteRenombrar: true };
-    }
-    if (diasRacha >= 5) {
-      return { nivel: 2, etapa: "Cactus Bebé", icono: "🌵", color: "#2E7D32", permiteRenombrar: true };
-    }
-    return { nivel: 1, etapa: "Brote Semilla", icono: "🌱", color: "#8BC34A", permiteRenombrar: false };
-  };
-
-  const evolucion = obtenerEtapaEvolutiva(racha);
-
-  // Efecto de rebote al presionar
-  const animarPresion = () => {
+  const bounce = () => {
     Animated.sequence([
-      Animated.timing(animEscala, { toValue: 0.85, duration: 100, useNativeDriver: true }),
-      Animated.spring(animEscala, { toValue: 1, friction: 3, tension: 40, useNativeDriver: true })
+      Animated.timing(press, { toValue: 0.85, duration: 100, useNativeDriver: true }),
+      Animated.spring(press, { toValue: 1, friction: 3, tension: 40, useNativeDriver: true }),
     ]).start();
   };
 
-  const handleAbrirMenu = () => {
-    animarPresion();
-    setModoEdicion(false);
+  const openMenu = () => {
+    bounce();
+    setEditing(false);
     setModalVisible(true);
   };
 
-  const handleEjecutarRiego = () => {
-    if (onAlimentar) {
-      onAlimentar();
-    }
+  const handleFeed = () => {
     setModalVisible(false);
+    onAlimentar?.();
   };
 
-  const handleGuardarNombre = () => {
-    if (nuevoNombreInput.trim().length > 0) {
-      setNombre(nuevoNombreInput.trim());
-      setNuevoNombreInput("");
-      setModoEdicion(false);
+  const handleSaveName = async () => {
+    const saved = await renamePet(draft);
+    if (saved) {
+      setDraft('');
+      setEditing(false);
     }
   };
 
   return (
     <>
-      {/* MASCOTA FLOTANTE EN PANTALLA */}
-      <Animated.View 
-        style={[
-          styles.containerFlotante, 
-          { 
-            transform: [
-              { translateY: animFlotacion },
-              { scale: animEscala }
-            ] 
-          }
-        ]}
-      >
-        <TouchableOpacity 
-          onPress={handleAbrirMenu}
+      {/* Mascota flotante */}
+      <Animated.View style={[styles.floating, { transform: [{ scale: press }] }]}>
+        <TouchableOpacity
+          onPress={openMenu}
           activeOpacity={0.8}
           style={styles.touchTarget}
+          accessibilityLabel={`Abrir a ${name}`}
         >
-          {/* Badge de Nivel Evolutivo */}
-          <View style={[styles.badgeNivel, { backgroundColor: evolucion.color }]}>
-            <Text style={styles.textoNivel}>Nv.{evolucion.nivel}</Text>
+          <View style={[styles.levelBadge, { backgroundColor: stage.color }]}>
+            <Text style={styles.badgeText}>Nv.{stage.level}</Text>
           </View>
 
-          {/* Badge de Racha Acumulada */}
-          <View style={styles.badgeRacha}>
-            <Text style={styles.textoRacha}>🔥 {racha}d</Text>
+          <View style={styles.streakBadge}>
+            <Text style={styles.badgeText}>🔥 {streak.current}d</Text>
           </View>
 
-          {/* Avatar de la Mascota */}
-          <View style={[
-            styles.avatarContainer, 
-            { borderColor: evolucion.color },
-            estado !== 'happy' && styles.avatarHambriento
-          ]}>
-            <Image 
-              source={require('../../assets/icon.png')}
-              style={styles.imagenMascota}
+          <View
+            style={[
+              styles.avatar,
+              { borderColor: needsWater ? '#D32F2F' : stage.color },
+              needsWater && styles.avatarHungry,
+            ]}
+          >
+            <DynamicPlantMascot
+              due={counts.due}
+              overdue={counts.overdue}
+              streakDays={streak.current}
+              isCelebrating={mood === MOODS.CELEBRANDO}
+              resizeMode="cover"
+              style={styles.avatarImage}
             />
           </View>
         </TouchableOpacity>
       </Animated.View>
 
-      {/* MODAL INTERACTIVO MULTIPLATAFORMA (ANDROID / IOS / WEB) */}
+      {/* Menú de la mascota */}
       <Modal
         animationType="fade"
-        transparent={true}
+        transparent
         visible={modalVisible}
         onRequestClose={() => setModalVisible(false)}
       >
-        <Pressable style={styles.modalOverlay} onPress={() => setModalVisible(false)}>
-          <Pressable style={styles.modalCard} onPress={(e) => e.stopPropagation()}>
-            
-            {/* Header del Modal */}
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalIcono}>{evolucion.icono}</Text>
-              <Text style={styles.modalTitulo}>{nombre}</Text>
-              <Text style={[styles.modalEtapa, { color: evolucion.color }]}>
-                Nivel {evolucion.nivel} — {evolucion.etapa}
+        <Pressable style={styles.overlay} onPress={() => setModalVisible(false)}>
+          <Pressable style={styles.card} onPress={(event) => event.stopPropagation()}>
+            <View style={styles.header}>
+              <Text style={styles.stageIcon}>{stage.icon}</Text>
+              <Text style={styles.title}>{name}</Text>
+              <Text style={[styles.stageText, { color: stage.color }]}>
+                Nivel {stage.level} — {stage.name}
               </Text>
             </View>
 
-            {/* Estado e Información */}
-            <View style={styles.infoContainer}>
-              <Text style={styles.infoTexto}>
-                🔥 <Text style={styles.infoBold}>Racha actual:</Text> {racha} días consecutivos.
+            <View style={styles.info}>
+              <Text style={styles.infoText}>
+                🔥 <Text style={styles.bold}>Racha actual:</Text> {streak.current}{' '}
+                {streak.current === 1 ? 'día' : 'días'} (mejor: {Math.max(streak.best, streak.current)})
               </Text>
-              <Text style={styles.infoTexto}>
-                ❤️ <Text style={styles.infoBold}>Salud:</Text> {estado === 'happy' ? '¡Satisfecha y radiante!' : '¡Hambrienta! Se requiere riego.'}
+              <Text style={styles.infoText}>
+                ❤️ <Text style={styles.bold}>Estado:</Text> {statusText}
               </Text>
             </View>
 
-            {/* Formulario de Cambio de Nombre (si racha >= 5) */}
-            {modoEdicion ? (
-              <View style={styles.edicionContainer}>
+            {editing ? (
+              <View style={styles.editBox}>
                 <TextInput
-                  style={styles.inputNombre}
-                  placeholder="Ingresa nuevo nombre..."
-                  value={nuevoNombreInput}
-                  onChangeText={setNuevoNombreInput}
+                  style={styles.input}
+                  placeholder="Ingresa un nuevo nombre..."
+                  value={draft}
+                  onChangeText={setDraft}
+                  maxLength={20}
                   autoFocus
                 />
-                <View style={styles.rowBotones}>
-                  <TouchableOpacity style={styles.btnCancelar} onPress={() => setModoEdicion(false)}>
-                    <Text style={styles.btnTextoSecundario}>Cancelar</Text>
+                <View style={styles.buttonRow}>
+                  <TouchableOpacity style={styles.btnCancel} onPress={() => setEditing(false)}>
+                    <Text style={styles.btnTextDark}>Cancelar</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity style={styles.btnGuardar} onPress={handleGuardarNombre}>
-                    <Text style={styles.btnTextoBlanco}>Guardar</Text>
+                  <TouchableOpacity style={styles.btnSave} onPress={handleSaveName}>
+                    <Text style={styles.btnTextWhite}>Guardar</Text>
                   </TouchableOpacity>
                 </View>
               </View>
             ) : (
-              /* Botones de Acción Principal */
-              <View style={styles.accionesContainer}>
-                <TouchableOpacity style={styles.btnPrincipal} onPress={handleEjecutarRiego}>
-                  <Text style={styles.btnTextoBlanco}>💧 Alimentar (Registrar Riego)</Text>
+              <View style={styles.actions}>
+                <TouchableOpacity style={styles.btnMain} onPress={handleFeed}>
+                  <Text style={styles.btnTextWhite}>💧 Alimentar (Registrar riego)</Text>
                 </TouchableOpacity>
 
-                {evolucion.permiteRenombrar ? (
-                  <TouchableOpacity style={styles.btnSecundario} onPress={() => setModoEdicion(true)}>
-                    <Text style={styles.btnTextoSecundario}>✏️ Cambiar Nombre</Text>
+                {canRename ? (
+                  <TouchableOpacity style={styles.btnSecondary} onPress={() => setEditing(true)}>
+                    <Text style={styles.btnTextDark}>✏️ Cambiar nombre</Text>
                   </TouchableOpacity>
                 ) : (
-                  <Text style={styles.textoBloqueado}>
-                    🔒 Alcanza 5 días de racha para personalizar el nombre.
+                  <Text style={styles.locked}>
+                    🔒 Alcanza {RENAME_UNLOCK_DAYS} días de racha para personalizar el nombre.
                   </Text>
                 )}
 
-                <TouchableOpacity style={styles.btnCerrar} onPress={() => setModalVisible(false)}>
-                  <Text style={styles.btnTextoCerrar}>Cerrar</Text>
+                <TouchableOpacity style={styles.btnClose} onPress={() => setModalVisible(false)}>
+                  <Text style={styles.btnCloseText}>Cerrar</Text>
                 </TouchableOpacity>
               </View>
             )}
-
           </Pressable>
         </Pressable>
       </Modal>
@@ -218,42 +165,32 @@ export default function MascotaWidget({
 }
 
 const styles = StyleSheet.create({
-  containerFlotante: {
+  floating: {
     position: 'absolute',
     bottom: 95,
     right: 20,
     zIndex: 9999,
     elevation: 10,
   },
-  touchTarget: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 5,
-  },
-  avatarContainer: {
+  touchTarget: { alignItems: 'center', justifyContent: 'center', padding: 5 },
+  avatar: {
     width: 68,
     height: 68,
     borderRadius: 34,
-    backgroundColor: '#E8F5E9',
+    backgroundColor: '#FFFFFF',
     borderWidth: 3,
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
     elevation: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 4.65,
   },
-  avatarHambriento: {
-    backgroundColor: '#FFEBEE',
-    borderColor: '#D32F2F',
-  },
-  imagenMascota: {
-    width: 46,
-    height: 46,
-    resizeMode: 'contain',
-  },
-  badgeRacha: {
+  avatarHungry: { backgroundColor: '#FFEBEE' },
+  avatarImage: { width: 62, height: 62, borderRadius: 31 },
+  streakBadge: {
     position: 'absolute',
     top: -3,
     right: -2,
@@ -265,12 +202,7 @@ const styles = StyleSheet.create({
     borderColor: '#FFF',
     zIndex: 10,
   },
-  textoRacha: {
-    color: '#FFF',
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  badgeNivel: {
+  levelBadge: {
     position: 'absolute',
     top: -3,
     left: -2,
@@ -281,20 +213,16 @@ const styles = StyleSheet.create({
     borderColor: '#FFF',
     zIndex: 10,
   },
-  textoNivel: {
-    color: '#FFF',
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  // ESTILOS DEL MODAL MULTIPLATAFORMA
-  modalOverlay: {
+  badgeText: { color: '#FFF', fontSize: 10, fontWeight: 'bold' },
+
+  overlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
   },
-  modalCard: {
+  card: {
     width: '100%',
     maxWidth: 340,
     backgroundColor: '#FFFFFF',
@@ -302,49 +230,22 @@ const styles = StyleSheet.create({
     padding: 24,
     alignItems: 'center',
     elevation: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
   },
-  modalHeader: {
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  modalIcono: {
-    fontSize: 42,
-    marginBottom: 4,
-  },
-  modalTitulo: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#1A1A1A',
-  },
-  modalEtapa: {
-    fontSize: 13,
-    fontWeight: '600',
-    marginTop: 2,
-  },
-  infoContainer: {
+  header: { alignItems: 'center', marginBottom: 16 },
+  stageIcon: { fontSize: 42, marginBottom: 4 },
+  title: { fontSize: 22, fontWeight: '700', color: '#1A1A1A' },
+  stageText: { fontSize: 13, fontWeight: '600', marginTop: 2 },
+  info: {
     width: '100%',
     backgroundColor: '#F5F5F5',
     borderRadius: 12,
     padding: 12,
     marginBottom: 20,
   },
-  infoTexto: {
-    fontSize: 13,
-    color: '#444',
-    marginVertical: 2,
-  },
-  infoBold: {
-    fontWeight: '700',
-  },
-  accionesContainer: {
-    width: '100%',
-    alignItems: 'center',
-  },
-  btnPrincipal: {
+  infoText: { fontSize: 13, color: '#444', marginVertical: 2 },
+  bold: { fontWeight: '700' },
+  actions: { width: '100%', alignItems: 'center' },
+  btnMain: {
     width: '100%',
     backgroundColor: '#1A1A1A',
     paddingVertical: 14,
@@ -352,7 +253,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 10,
   },
-  btnSecundario: {
+  btnSecondary: {
     width: '100%',
     backgroundColor: '#F0F0F0',
     paddingVertical: 12,
@@ -360,35 +261,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 10,
   },
-  btnTextoBlanco: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: 14,
-  },
-  btnTextoSecundario: {
-    color: '#333333',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  btnCerrar: {
-    marginTop: 6,
-    padding: 8,
-  },
-  btnTextoCerrar: {
-    color: '#888888',
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  textoBloqueado: {
-    fontSize: 11,
-    color: '#888',
-    textAlign: 'center',
-    marginVertical: 8,
-  },
-  edicionContainer: {
-    width: '100%',
-  },
-  inputNombre: {
+  btnTextWhite: { color: '#FFFFFF', fontWeight: '700', fontSize: 14 },
+  btnTextDark: { color: '#333333', fontWeight: '600', fontSize: 14 },
+  btnClose: { marginTop: 6, padding: 8 },
+  btnCloseText: { color: '#888888', fontSize: 13, fontWeight: '500' },
+  locked: { fontSize: 11, color: '#888', textAlign: 'center', marginVertical: 8 },
+  editBox: { width: '100%' },
+  input: {
     borderWidth: 1.5,
     borderColor: '#7BA44D',
     borderRadius: 12,
@@ -397,11 +276,8 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     backgroundColor: '#FAFAFA',
   },
-  rowBotones: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  btnCancelar: {
+  buttonRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  btnCancel: {
     flex: 1,
     marginRight: 6,
     backgroundColor: '#F0F0F0',
@@ -409,7 +285,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
   },
-  btnGuardar: {
+  btnSave: {
     flex: 1,
     marginLeft: 6,
     backgroundColor: '#7BA44D',

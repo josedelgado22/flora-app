@@ -3,12 +3,11 @@
  *
  *  1. Si FORCE_MOCKS está activo -> resuelve con el mock.
  *  2. Si no, llama al API REST con timeout (SC-01: 3 s).
- *  3. Ante timeout / sin red / 5xx -> cae al mock SOLO si la llamada lo permite
- *     (fallbackToMock). Los errores 4xx (ej. 401) son respuestas reales del
- *     servidor y NUNCA caen a mock.
+ *  3. Los errores se normalizan a ApiError conservando status y code originales
+ *     (timeout / network / http_4xx / http_5xx). Así isRecoverable() y el refresh
+ *     de token pueden decidir bien.
  *
- * Devuelve siempre { data, source } con source = 'api' | 'mock', para que
- * la UI pueda mostrar "datos de demostración" si corresponde.
+ * Devuelve siempre { data, source } con source = 'api' | 'mock'.
  */
 import {
   API_BASE_URL,
@@ -32,7 +31,7 @@ export class ApiError extends Error {
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-/** Errores de infraestructura: justifican fallback / reintento. */
+/** Errores de infraestructura: justifican reintento posterior (no son culpa del dato enviado). */
 export function isRecoverable(error) {
   return (
     error instanceof ApiError &&
@@ -53,6 +52,7 @@ async function fetchWithTimeout(url, options, timeoutMs) {
         detail: `El servidor no respondió en ${timeoutMs / 1000} s.`,
       });
     }
+    console.warn('[apiClient] fetch original falló:', error?.name, error?.message, url);
     throw new ApiError({ code: 'network', detail: 'No hay conexión con el servidor.' });
   } finally {
     clearTimeout(timer);
@@ -161,10 +161,9 @@ async function runMock(mock) {
  * @param {string} path  Ruta relativa, ej. '/plantas/'
  * @param {object} opts
  * @param {'GET'|'POST'|'PUT'|'PATCH'|'DELETE'} [opts.method='GET']
- * @param {object} [opts.body]
+ * @param {object|FormData} [opts.body]
  * @param {boolean} [opts.authenticated=true]   Adjunta el JWT si existe
- * @param {Function} [opts.mock]                Función que devuelve el mock (puede lanzar ApiError)
- * @param {boolean} [opts.fallbackToMock=true]  Permitir mock si el API falla
+ * @param {Function} [opts.mock]                Función que devuelve el mock (solo modo demo)
  * @param {number} [opts.timeoutMs]
  */
 export async function request(
@@ -174,7 +173,6 @@ export async function request(
     body,
     authenticated = true,
     mock,
-    fallbackToMock = true,
     timeoutMs = REQUEST_TIMEOUT_MS,
   } = {}
 ) {
@@ -186,11 +184,13 @@ export async function request(
     const data = await callWithRefresh(path, { method, body, authenticated, timeoutMs });
     return { data, source: 'api' };
   } catch (error) {
-    console.warn(`[apiClient] ${method} ${API_BASE_URL}${path} -> ${error?.code} ${error?.status ?? ''}`);
-    if (fallbackToMock && mock && isRecoverable(error)) {
-      console.warn(`[apiClient] ${method} ${path} falló (${error.code}); usando mock.`);
-      return runMock(mock);
-    }
-    throw error;
+    // Conserva el status/code originales (401, 400, timeout...). Solo lo desconocido pasa a 'network'.
+    const apiError =
+      error instanceof ApiError
+        ? error
+        : new ApiError({ code: 'network', detail: 'No hay conexión con el servidor.' });
+
+    console.warn('[apiClient] fetch falló:', apiError.code, apiError.status, apiError.message);
+    throw apiError;
   }
 }

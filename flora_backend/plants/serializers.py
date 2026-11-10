@@ -93,3 +93,13 @@ class SyncBatchSerializer(serializers.Serializer):
 class SyncRiegoPayloadSerializer(serializers.Serializer):
     planta_id = serializers.IntegerField()  # id del servidor (positivo) o id local de la app (negativo)
     regado_en = serializers.DateTimeField()
+class FotoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FotoPlanta
+        fields = ('id', 'tipo', 'url', 'tomada_en')
+        read_only_fields = fields
+
+
+class FotoUploadSerializer(serializers.Serializer):
+    imagen = serializers.FileField()
+    tipo = serializers.ChoiceField(choices=FotoPlanta.Tipo.choices, default=FotoPlanta.Tipo.PLANTA)
