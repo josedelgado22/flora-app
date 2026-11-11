@@ -16,7 +16,8 @@
         "foregroundImage": "./assets/icon.png"
       },
       "permissions": [
-        "android.permission.CAMERA"
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "web": {
@@ -31,12 +32,14 @@
         }
       ],
       "expo-secure-store",
-      "expo-sqlite"
+      "expo-sqlite",
+      "expo-font"
     ],
     "extra": {
       "eas": {
-        "projectId": "328ec30e-0482-4468-9205-85aa15587356"
+        "projectId": "e753fdaf-babb-44b1-8fd7-af2e54692327"
       }
-    }
+    },
+    "owner": "josedelgados-team"
   }
 }

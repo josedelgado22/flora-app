@@ -2,15 +2,16 @@
 /**
  * MascotaWidget - Botón flotante de Espina (Agenda), conectado a PetContext.
  *
- * Ahora todo sale de usePet(): nombre (se guarda al renombrar), racha real, etapa evolutiva,
- * estado de riego y la expresión del cactus (DynamicPlantMascot). Ya no usa el icono de la app.
+ * Todo sale de usePet(): nombre (se guarda al renombrar), racha real, etapa evolutiva,
+ * estado de riego y la expresión del cactus (DynamicPlantMascot). Íconos vectoriales
+ * (Ionicons / MaterialCommunityIcons) en lugar de emojis.
  *
  * Props:
  *   onAlimentar  se llama al pulsar "Alimentar (Registrar riego)"
- * (nombreInicial, racha y estado de la versión anterior ya no hacen falta; si se pasan, se ignoran)
  */
 import React, { useRef, useState } from 'react';
 import { Animated, Modal, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { usePet } from '../context/PetContext';
 import { MOODS, RENAME_UNLOCK_DAYS } from '../utils/petFsm';
 import DynamicPlantMascot from './DynamicPlantMascot';
@@ -26,6 +27,7 @@ export default function MascotaWidget({ onAlimentar }) {
   const pending = counts.due + counts.overdue;
   const needsWater = pending > 0;
   const canRename = streak.best >= RENAME_UNLOCK_DAYS;
+  const stageIcon = stage.icon ?? 'cactus'; // nombre de MaterialCommunityIcons (petFsm.STAGES)
 
   const bounce = () => {
     Animated.sequence([
@@ -68,7 +70,8 @@ export default function MascotaWidget({ onAlimentar }) {
           </View>
 
           <View style={styles.streakBadge}>
-            <Text style={styles.badgeText}>🔥 {streak.current}d</Text>
+            <Ionicons name="flame" size={11} color="#FFFFFF" />
+            <Text style={styles.badgeText}>{streak.current}d</Text>
           </View>
 
           <View
@@ -100,7 +103,12 @@ export default function MascotaWidget({ onAlimentar }) {
         <Pressable style={styles.overlay} onPress={() => setModalVisible(false)}>
           <Pressable style={styles.card} onPress={(event) => event.stopPropagation()}>
             <View style={styles.header}>
-              <Text style={styles.stageIcon}>{stage.icon}</Text>
+              <MaterialCommunityIcons
+                name={stageIcon}
+                size={46}
+                color={stage.color}
+                style={styles.stageIcon}
+              />
               <Text style={styles.title}>{name}</Text>
               <Text style={[styles.stageText, { color: stage.color }]}>
                 Nivel {stage.level} — {stage.name}
@@ -108,13 +116,19 @@ export default function MascotaWidget({ onAlimentar }) {
             </View>
 
             <View style={styles.info}>
-              <Text style={styles.infoText}>
-                🔥 <Text style={styles.bold}>Racha actual:</Text> {streak.current}{' '}
-                {streak.current === 1 ? 'día' : 'días'} (mejor: {Math.max(streak.best, streak.current)})
-              </Text>
-              <Text style={styles.infoText}>
-                ❤️ <Text style={styles.bold}>Estado:</Text> {statusText}
-              </Text>
+              <View style={styles.infoRow}>
+                <Ionicons name="flame" size={16} color="#FF6F00" />
+                <Text style={styles.infoText}>
+                  <Text style={styles.bold}>Racha actual:</Text> {streak.current}{' '}
+                  {streak.current === 1 ? 'día' : 'días'} (mejor: {Math.max(streak.best, streak.current)})
+                </Text>
+              </View>
+              <View style={styles.infoRow}>
+                <Ionicons name="heart" size={16} color="#E53935" />
+                <Text style={styles.infoText}>
+                  <Text style={styles.bold}>Estado:</Text> {statusText}
+                </Text>
+              </View>
             </View>
 
             {editing ? (
@@ -139,17 +153,26 @@ export default function MascotaWidget({ onAlimentar }) {
             ) : (
               <View style={styles.actions}>
                 <TouchableOpacity style={styles.btnMain} onPress={handleFeed}>
-                  <Text style={styles.btnTextWhite}>💧 Alimentar (Registrar riego)</Text>
+                  <View style={styles.btnContent}>
+                    <Ionicons name="water" size={18} color="#FFFFFF" />
+                    <Text style={styles.btnTextWhite}>Alimentar (Registrar riego)</Text>
+                  </View>
                 </TouchableOpacity>
 
                 {canRename ? (
                   <TouchableOpacity style={styles.btnSecondary} onPress={() => setEditing(true)}>
-                    <Text style={styles.btnTextDark}>✏️ Cambiar nombre</Text>
+                    <View style={styles.btnContent}>
+                      <Ionicons name="pencil" size={15} color="#333333" />
+                      <Text style={styles.btnTextDark}>Cambiar nombre</Text>
+                    </View>
                   </TouchableOpacity>
                 ) : (
-                  <Text style={styles.locked}>
-                    🔒 Alcanza {RENAME_UNLOCK_DAYS} días de racha para personalizar el nombre.
-                  </Text>
+                  <View style={styles.lockedRow}>
+                    <Ionicons name="lock-closed" size={13} color="#888888" />
+                    <Text style={styles.locked}>
+                      Alcanza {RENAME_UNLOCK_DAYS} días de racha para personalizar el nombre.
+                    </Text>
+                  </View>
                 )}
 
                 <TouchableOpacity style={styles.btnClose} onPress={() => setModalVisible(false)}>
@@ -194,6 +217,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -3,
     right: -2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
     backgroundColor: '#FF6F00',
     paddingHorizontal: 7,
     paddingVertical: 2,
@@ -232,7 +258,7 @@ const styles = StyleSheet.create({
     elevation: 20,
   },
   header: { alignItems: 'center', marginBottom: 16 },
-  stageIcon: { fontSize: 42, marginBottom: 4 },
+  stageIcon: { marginBottom: 4 },
   title: { fontSize: 22, fontWeight: '700', color: '#1A1A1A' },
   stageText: { fontSize: 13, fontWeight: '600', marginTop: 2 },
   info: {
@@ -242,7 +268,8 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 20,
   },
-  infoText: { fontSize: 13, color: '#444', marginVertical: 2 },
+  infoRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginVertical: 3 },
+  infoText: { flex: 1, fontSize: 13, color: '#444' },
   bold: { fontWeight: '700' },
   actions: { width: '100%', alignItems: 'center' },
   btnMain: {
@@ -261,11 +288,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 10,
   },
+  btnContent: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   btnTextWhite: { color: '#FFFFFF', fontWeight: '700', fontSize: 14 },
   btnTextDark: { color: '#333333', fontWeight: '600', fontSize: 14 },
   btnClose: { marginTop: 6, padding: 8 },
   btnCloseText: { color: '#888888', fontSize: 13, fontWeight: '500' },
-  locked: { fontSize: 11, color: '#888', textAlign: 'center', marginVertical: 8 },
+  lockedRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginVertical: 8 },
+  locked: { flexShrink: 1, fontSize: 11, color: '#888', textAlign: 'center' },
   editBox: { width: '100%' },
   input: {
     borderWidth: 1.5,

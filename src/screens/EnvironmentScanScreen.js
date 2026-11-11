@@ -5,6 +5,7 @@
  */
 import React, { useState } from 'react';
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import HistogramChart from '../components/HistogramChart';
 import LoadingState from '../components/LoadingState';
 import PhotoPicker from '../components/PhotoPicker';
@@ -12,6 +13,11 @@ import PrimaryButton from '../components/PrimaryButton';
 import { analyzeLight } from '../services/lightService';
 import { baseStyles, colors, radius, spacing } from '../theme/theme';
 import { LIGHT_LEVELS, lightLabel } from '../utils/light';
+
+const PLACE_OPTIONS = [
+  { value: 'interior', label: 'Interior', icon: 'home' },
+  { value: 'exterior', label: 'Exterior', icon: 'sunny' },
+];
 
 export default function EnvironmentScanScreen({ route, navigation }) {
   const { photoUri, species } = route.params;
@@ -62,21 +68,20 @@ export default function EnvironmentScanScreen({ route, navigation }) {
 
       <Text style={styles.sectionLabel}>Tipo de lugar</Text>
       <View style={styles.segment}>
-        {[
-          { value: 'interior', label: '🏠 Interior' },
-          { value: 'exterior', label: '☀️ Exterior' },
-        ].map((option) => (
-          <TouchableOpacity
-            key={option.value}
-            style={[styles.segmentItem, ubicacion === option.value && styles.segmentItemActive]}
-            onPress={() => setUbicacion(option.value)}
-            accessibilityState={{ selected: ubicacion === option.value }}
-          >
-            <Text style={[styles.segmentText, ubicacion === option.value && styles.segmentTextActive]}>
-              {option.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
+        {PLACE_OPTIONS.map((option) => {
+          const active = ubicacion === option.value;
+          return (
+            <TouchableOpacity
+              key={option.value}
+              style={[styles.segmentItem, active && styles.segmentItemActive]}
+              onPress={() => setUbicacion(option.value)}
+              accessibilityState={{ selected: active }}
+            >
+              <Ionicons name={option.icon} size={18} color={active ? '#FFFFFF' : colors.text} />
+              <Text style={[styles.segmentText, active && styles.segmentTextActive]}>{option.label}</Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
 
       <Text style={styles.sectionLabel}>Foto del lugar</Text>
@@ -87,7 +92,8 @@ export default function EnvironmentScanScreen({ route, navigation }) {
       ) : (
         <PhotoPicker
           onPicked={handlePlacePhoto}
-          cameraLabel={placePhoto ? '📷 Tomar otra foto' : '📷 Fotografiar el lugar'}
+          cameraLabel={placePhoto ? 'Tomar otra foto' : 'Fotografiar el lugar'}
+          cameraIcon="camera-outline"
         />
       )}
 
@@ -153,7 +159,15 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     overflow: 'hidden',
   },
-  segmentItem: { flex: 1, paddingVertical: 12, alignItems: 'center', backgroundColor: '#FFFFFF' },
+  segmentItem: {
+    flex: 1,
+    flexDirection: 'row',
+    gap: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+  },
   segmentItemActive: { backgroundColor: colors.ink },
   segmentText: { fontSize: 14, fontWeight: '600', color: colors.text },
   segmentTextActive: { color: '#FFFFFF' },

@@ -6,6 +6,7 @@
  */
 import React, { useMemo, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import PrimaryButton from '../components/PrimaryButton';
 import { usePlants } from '../context/PlantsContext';
 import { baseStyles, colors, radius, spacing } from '../theme/theme';
@@ -14,9 +15,9 @@ import { lightLabel } from '../utils/light';
 import { buildPlantPayload } from '../utils/plantPayload';
 
 const VERDICT_META = {
-  ideal: { emoji: '✅', title: 'Lugar ideal', color: colors.primaryDark, bg: colors.tint },
-  aceptable: { emoji: '⚠️', title: 'Lugar aceptable', color: colors.warning, bg: '#FBF3E1' },
-  no_recomendado: { emoji: '⛔', title: 'No recomendado', color: colors.danger, bg: colors.dangerTint },
+  ideal: { icon: 'checkmark-circle', title: 'Lugar ideal', color: colors.primaryDark, bg: colors.tint },
+  aceptable: { icon: 'warning', title: 'Lugar aceptable', color: colors.warning, bg: '#FBF3E1' },
+  no_recomendado: { icon: 'close-circle', title: 'No recomendado', color: colors.danger, bg: colors.dangerTint },
 };
 
 export default function CompatibilityResultScreen({ route, navigation }) {
@@ -47,7 +48,7 @@ export default function CompatibilityResultScreen({ route, navigation }) {
         })
       );
       Alert.alert(
-        '¡Planta guardada! 🌱',
+        '¡Planta guardada!',
         `${species.nombre_comun} quedó en tu jardín con riego cada ${result.frecuenciaAjustadaDias} días.`,
         [{ text: 'Ver mi jardín', onPress: goToGarden }]
       );
@@ -61,7 +62,7 @@ export default function CompatibilityResultScreen({ route, navigation }) {
   return (
     <ScrollView style={baseStyles.screen} contentContainerStyle={styles.content}>
       <View style={[styles.verdictCard, { backgroundColor: meta.bg }]}>
-        <Text style={styles.verdictEmoji}>{meta.emoji}</Text>
+        <Ionicons name={meta.icon} size={48} color={meta.color} />
         <Text style={[styles.verdictTitle, { color: meta.color }]}>{meta.title}</Text>
         <Text style={styles.verdictSub}>
           {species.nombre_comun} en un lugar {ubicacion} · compatibilidad {result.score}%
@@ -80,7 +81,7 @@ export default function CompatibilityResultScreen({ route, navigation }) {
       </View>
 
       <View style={styles.waterBox}>
-        <Text style={styles.waterEmoji}>💧</Text>
+        <Ionicons name="water" size={30} color="#3B8EDB" style={styles.waterIcon} />
         <View style={styles.flex}>
           <Text style={styles.waterTitle}>Riego recomendado: cada {result.frecuenciaAjustadaDias} días</Text>
           <Text style={styles.waterSub}>Ajustado a la luz de este lugar.</Text>
@@ -128,7 +129,6 @@ const styles = StyleSheet.create({
   content: { padding: spacing.lg, paddingBottom: spacing.xl },
   flex: { flex: 1 },
   verdictCard: { padding: spacing.lg, borderRadius: radius.lg, alignItems: 'center' },
-  verdictEmoji: { fontSize: 40 },
   verdictTitle: { fontSize: 22, fontWeight: '700', marginTop: spacing.xs },
   verdictSub: { fontSize: 13, color: colors.textMuted, marginTop: 4, textAlign: 'center' },
   compareRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md },
@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     backgroundColor: colors.accentTint,
   },
-  waterEmoji: { fontSize: 26, marginRight: spacing.md },
+  waterIcon: { marginRight: spacing.md },
   waterTitle: { fontSize: 14, fontWeight: '700', color: colors.text },
   waterSub: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
   sectionTitle: { fontSize: 14, fontWeight: '700', color: colors.text, marginTop: spacing.lg, marginBottom: spacing.sm },

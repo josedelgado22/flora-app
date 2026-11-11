@@ -2,6 +2,9 @@
  * notificationService.js - Notificaciones LOCALES con expo-notifications (HU-FLOR-015).
  * Implementa el patrón de Degradación Grácil (ISO/IEC 25010) para evitar
  * colapsos en entornos de prueba genéricos como Expo Go.
+ *
+ * Nota: las notificaciones del sistema solo admiten texto. El ícono pequeño de Android
+ * se configura una vez en app.json (plugin expo-notifications, campo "icon").
  */
 import { Platform } from 'react-native';
 
@@ -119,7 +122,7 @@ export async function scheduleTestNotification() {
   try {
     await NotificationsModule.scheduleNotificationAsync({
       content: {
-        title: 'Recordatorio de prueba 💧',
+        title: 'Recordatorio de prueba',
         body: 'Así te avisará F.L.O.R.A. cuando toque regar.',
         data: { tipo: 'prueba' },
       },

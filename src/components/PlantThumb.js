@@ -1,12 +1,14 @@
 /**
- * PlantThumb.js - Miniatura de planta: foto si existe; emoji 🌿 de respaldo si no hay foto
+ * PlantThumb.js - Miniatura de planta: foto si existe; ícono de hoja de respaldo si no hay foto
  * o el archivo ya no está disponible (ej. el sistema limpió la caché del teléfono).
  */
 import React, { useEffect, useState } from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme/theme';
 
-export default function PlantThumb({ uri, size = 42, radius = 12, emojiSize = 20 }) {
+// emojiSize se mantiene por compatibilidad con llamadas anteriores; usa iconSize en código nuevo
+export default function PlantThumb({ uri, size = 42, radius = 12, iconSize, emojiSize = 20 }) {
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
@@ -25,7 +27,7 @@ export default function PlantThumb({ uri, size = 42, radius = 12, emojiSize = 20
           onError={() => setFailed(true)}
         />
       ) : (
-        <Text style={{ fontSize: emojiSize }}>🌿</Text>
+        <Ionicons name="leaf" size={iconSize ?? emojiSize} color="#FFFFFF" />
       )}
     </View>
   );

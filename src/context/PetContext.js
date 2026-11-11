@@ -142,7 +142,7 @@ export function PetProvider({ children }) {
   const statusText = useMemo(() => {
     switch (state.mood) {
       case MOODS.CELEBRANDO:
-        return '¡Gracias por regar! 🎉';
+        return '¡Gracias por regar! ';
       case MOODS.CRITICA:
         return `${counts.overdue} ${plural(counts.overdue, 'planta atrasada', 'plantas atrasadas')}: ¡te necesito!`;
       case MOODS.HAMBRIENTA:
@@ -157,7 +157,7 @@ export function PetProvider({ children }) {
       name,
       stage,
       mood: state.mood,
-      moodEmoji: MOOD_META[state.mood].emoji,
+      moodIcon: MOOD_META[state.mood].icon,
       streak,
       statusText,
       counts,

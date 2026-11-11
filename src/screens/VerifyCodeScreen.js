@@ -1,8 +1,3 @@
-/**
- * VerifyCodeScreen.js - Segundo factor de autenticación (código de 6 dígitos).
- * Paso 2 del login: canjea el código por la sesión. Incluye vencimiento (mm:ss),
- * reenvío con enfriamiento de 30 s y envío automático al completar los 6 dígitos.
- */
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   KeyboardAvoidingView,
@@ -15,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import PrimaryButton from '../components/PrimaryButton';
 import { DEMO_2FA_CODE, FORCE_MOCKS, REAL_AUTH } from '../config/appConfig';
 import { useAuth } from '../context/AuthContext';
@@ -98,11 +94,14 @@ export default function VerifyCodeScreen({ route, navigation }) {
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-          <TouchableOpacity onPress={() => navigation.goBack()} activeOpacity={0.7}>
-            <Text style={styles.back}>← Volver</Text>
+          <TouchableOpacity onPress={() => navigation.goBack()} activeOpacity={0.7} style={styles.backRow}>
+            <Ionicons name="arrow-back" size={16} color={colors.accent} />
+            <Text style={styles.back}>Volver</Text>
           </TouchableOpacity>
 
-          <Text style={styles.emoji}>{isRegister ? '✉️' : '🔐'}</Text>
+          <View style={styles.iconWrap}>
+            <Ionicons name={isRegister ? 'mail' : 'lock-closed'} size={44} color={colors.primary} />
+          </View>
           <Text style={styles.title}>{isRegister ? 'Confirma tu correo' : 'Verifica tu identidad'}</Text>
           <Text style={styles.subtitle}>
             {isRegister ? 'Para activar tu cuenta, enviamos' : 'Enviamos'} un código de {CODE_LENGTH} dígitos a{' '}
@@ -162,9 +161,18 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   container: { flex: 1, backgroundColor: '#FFFFFF' },
   scroll: { flexGrow: 1, paddingHorizontal: 26, paddingTop: 12, paddingBottom: 32, maxWidth: 600, width: '100%', alignSelf: 'center' },
-  back: { fontSize: 13, color: colors.accent, fontWeight: '600', paddingVertical: 8 },
-  emoji: { fontSize: 44, marginTop: 24 },
-  title: { fontSize: 26, color: colors.text, marginTop: 8, fontWeight: '700' },
+  backRow: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 8, alignSelf: 'flex-start' },
+  back: { fontSize: 13, color: colors.accent, fontWeight: '600' },
+  iconWrap: {
+    marginTop: 24,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: colors.tint,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  title: { fontSize: 26, color: colors.text, marginTop: 12, fontWeight: '700' },
   subtitle: { fontSize: 14, color: colors.textMuted, marginTop: 6, lineHeight: 20 },
   bold: { fontWeight: '700', color: colors.text },
   codeInput: {

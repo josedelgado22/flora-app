@@ -1,6 +1,7 @@
-/** PrimaryButton.js - Botón principal con estado de carga y deshabilitado. */
+/** PrimaryButton.js - Botón principal con estado de carga, deshabilitado e ícono opcional. */
 import React from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { colors, radius, spacing, typography } from '../theme/theme';
 
 export default function PrimaryButton({
@@ -9,6 +10,7 @@ export default function PrimaryButton({
   loading = false,
   disabled = false,
   variant = 'solid', // 'solid' | 'outline' | 'danger'
+  icon, // opcional: nombre de un ícono de Ionicons (ej. 'camera'); se dibuja antes del texto
   style,
 }) {
   const inactive = disabled || loading;
@@ -34,7 +36,10 @@ export default function PrimaryButton({
       {loading ? (
         <ActivityIndicator color={textColor} size="small" />
       ) : (
-        <Text style={[styles.label, { color: textColor }]}>{title}</Text>
+        <View style={styles.content}>
+          {icon ? <Ionicons name={icon} size={20} color={textColor} /> : null}
+          <Text style={[styles.label, { color: textColor }]}>{title}</Text>
+        </View>
       )}
     </Pressable>
   );
@@ -53,5 +58,6 @@ const styles = StyleSheet.create({
   danger: { borderWidth: 1.5, borderColor: colors.danger, backgroundColor: colors.dangerTint },
   pressed: { opacity: 0.85 },
   inactive: { opacity: 0.55 },
+  content: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   label: { fontSize: 15, fontWeight: typography.weight.medium, letterSpacing: 0.3 },
 });

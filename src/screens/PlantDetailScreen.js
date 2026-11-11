@@ -1,10 +1,11 @@
 /**
  * PlantDetailScreen.js - Resultado de la identificación (ruta "PlantResult").
- * Recibe { photoUri, candidates[], estimada }. Permite elegir entre candidatos,
+ * Recibe { photoUri, candidates[], estimada, isDemo }. Permite elegir entre candidatos,
  * evaluar el lugar (flujo completo) o guardar directamente.
  */
 import React, { useState } from 'react';
 import { Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import PrimaryButton from '../components/PrimaryButton';
 import { usePlants } from '../context/PlantsContext';
 import { baseStyles, colors, radius, spacing } from '../theme/theme';
@@ -12,7 +13,7 @@ import { lightLabel } from '../utils/light';
 import { buildPlantPayload } from '../utils/plantPayload';
 
 export default function PlantDetailScreen({ route, navigation }) {
-  const { photoUri = null, candidates = [], estimada = false } = route.params ?? {};
+  const { photoUri = null, candidates = [], estimada = false, isDemo = false } = route.params ?? {};
   const { addPlant } = usePlants();
 
   const [selected, setSelected] = useState(0);
@@ -38,7 +39,7 @@ export default function PlantDetailScreen({ route, navigation }) {
     setSaving(true);
     try {
       await addPlant(buildPlantPayload(species, { photoUri }));
-      Alert.alert('¡Planta guardada! 🌱', `${species.nombre_comun} ya está en tu jardín.`, [
+      Alert.alert('¡Planta guardada!', `${species.nombre_comun} ya está en tu jardín.`, [
         { text: 'Ver mi jardín', onPress: goToGarden },
       ]);
     } catch (error) {
@@ -54,7 +55,7 @@ export default function PlantDetailScreen({ route, navigation }) {
         <Image source={{ uri: photoUri }} style={styles.photo} />
       ) : (
         <View style={[styles.photo, styles.photoPlaceholder]}>
-          <Text style={styles.photoEmoji}>🌿</Text>
+          <Ionicons name="leaf-outline" size={48} color="#FFFFFF" />
         </View>
       )}
 
@@ -63,6 +64,15 @@ export default function PlantDetailScreen({ route, navigation }) {
           {estimada ? `Coincidencia estimada ~${species.coincidencia}%` : `${species.coincidencia}% de coincidencia`}
         </Text>
       </View>
+
+      {isDemo && (
+        <View style={styles.demoBox}>
+          <Ionicons name="information-circle" size={16} color={colors.warning} />
+          <Text style={styles.demoText}>
+            Resultado de demostración: el servicio de identificación no estaba disponible.
+          </Text>
+        </View>
+      )}
 
       {estimada && (
         <Text style={styles.note}>
@@ -98,14 +108,17 @@ export default function PlantDetailScreen({ route, navigation }) {
 
       <View style={styles.careGrid}>
         <View style={styles.careChip}>
+          <Ionicons name="water-outline" size={18} color="#3B8EDB" />
           <Text style={styles.careVal}>cada {species.frecuencia_riego_dias} d</Text>
           <Text style={styles.careLab}>riego base</Text>
         </View>
         <View style={styles.careChip}>
+          <Ionicons name="sunny-outline" size={18} color="#F9A825" />
           <Text style={styles.careVal}>{lightLabel(species.nivel_luz_ideal)}</Text>
           <Text style={styles.careLab}>luz ideal</Text>
         </View>
         <View style={styles.careChip}>
+          <Ionicons name="thermometer-outline" size={18} color="#E53935" />
           <Text style={styles.careVal}>{species.temperatura}</Text>
           <Text style={styles.careLab}>temperatura</Text>
         </View>
@@ -132,7 +145,6 @@ const styles = StyleSheet.create({
   content: { padding: spacing.lg },
   photo: { height: 200, borderRadius: 18, width: '100%' },
   photoPlaceholder: { backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
-  photoEmoji: { fontSize: 56 },
   matchTag: {
     alignSelf: 'flex-start',
     marginTop: -14,
@@ -143,6 +155,16 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
   },
   matchText: { color: '#FFFFFF', fontSize: 11, fontWeight: '600' },
+  demoBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: spacing.md,
+    padding: spacing.sm,
+    borderRadius: radius.md,
+    backgroundColor: '#FBF3E1',
+  },
+  demoText: { flex: 1, fontSize: 12, color: colors.warning, fontWeight: '500' },
   note: { marginTop: spacing.sm, fontSize: 12, color: colors.warning },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.md },
   chip: {
@@ -167,9 +189,10 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     padding: 10,
     alignItems: 'center',
+    gap: 3,
   },
   careVal: { fontSize: 13, fontWeight: '600', color: '#000000', textAlign: 'center' },
-  careLab: { fontSize: 10, color: colors.textMuted, marginTop: 2 },
+  careLab: { fontSize: 10, color: colors.textMuted },
   cta: { marginTop: spacing.lg },
   second: { marginTop: spacing.sm },
   emptyWrap: { padding: spacing.xl },

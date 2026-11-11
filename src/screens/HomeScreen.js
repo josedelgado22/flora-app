@@ -7,6 +7,7 @@
 import React, { useCallback } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import ConnectionBanner from '../components/ConnectionBanner';
 import DynamicPlantMascot from '../components/DynamicPlantMascot';
 import ErrorState from '../components/ErrorState';
@@ -83,8 +84,9 @@ export default function HomeScreen({ navigation }) {
           {/* Mascota virtual y racha */}
           <View style={styles.mascotCard}>
             <View style={styles.streakPill}>
+              <Ionicons name="flame" size={16} color="#FF9800" />
               <Text style={styles.streakText}>
-                🔥 {streak.current} {streak.current === 1 ? 'día' : 'días'}
+                {streak.current} {streak.current === 1 ? 'día' : 'días'}
               </Text>
             </View>
 
@@ -104,7 +106,6 @@ export default function HomeScreen({ navigation }) {
           {/* Últimos 7 días con riego (se relee al regar o al cambiar la racha) */}
           <WeekStrip
             style={styles.weekStrip}
-            streak={streak}
             refreshKey={`${streak.current}:${lastWatering?.at ?? 0}`}
           />
 
@@ -130,7 +131,8 @@ export default function HomeScreen({ navigation }) {
             onPress={() => navigation.navigate('Escanear')}
             activeOpacity={0.8}
           >
-            <Text style={styles.scanButtonText}>📸 Escanear planta o entorno</Text>
+            <Ionicons name="camera" size={18} color="#FFFFFF" />
+            <Text style={styles.scanButtonText}>Escanear planta o entorno</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -157,6 +159,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 14,
     right: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     backgroundColor: '#000000',
     borderRadius: 100,
     paddingHorizontal: 11,
@@ -179,10 +184,13 @@ const styles = StyleSheet.create({
   empty: { fontSize: 13, color: colors.textMuted, marginBottom: 12 },
   scanButton: {
     marginTop: 12,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
     backgroundColor: '#000000',
     borderRadius: 14,
     paddingVertical: 15,
-    alignItems: 'center',
   },
   scanButtonText: { color: '#FFFFFF', fontSize: 14, fontWeight: '600' },
 });

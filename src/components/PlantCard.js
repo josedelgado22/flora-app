@@ -1,10 +1,11 @@
 /**
  * PlantCard.js - Tarjeta de planta (diseño original de F.L.O.R.A.).
- * Muestra la foto de la planta (o 🌿 si no tiene), ubicación, estado de riego calculado
- * y acciones: regar / reportar síntoma.
+ * Muestra la foto de la planta (o un ícono de hoja si no tiene), ubicación, estado de riego
+ * calculado y acciones: regar / reportar síntoma.
  */
 import React, { useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { getWateringStatus } from '../utils/watering';
 import { colors, radius, spacing } from '../theme/theme';
 import PlantThumb from './PlantThumb';
@@ -53,12 +54,14 @@ export default function PlantCard({ plant, onWater, onReportSymptom, onPress }) 
             disabled={isWatering}
             accessibilityLabel={`Regar ${plant.nombre_comun}`}
           >
-            <Text style={styles.btnWaterText}>{isWatering ? 'Registrando...' : '💧 Regar ahora'}</Text>
+            <Ionicons name="water" size={14} color="#FFFFFF" />
+            <Text style={styles.btnWaterText}>{isWatering ? 'Registrando...' : 'Regar ahora'}</Text>
           </TouchableOpacity>
         )}
 
         <TouchableOpacity style={styles.btnSymptom} onPress={() => onReportSymptom?.(plant)}>
-          <Text style={styles.btnSymptomText}>🩺 Reportar síntoma</Text>
+          <MaterialCommunityIcons name="stethoscope" size={15} color={colors.accent} />
+          <Text style={styles.btnSymptomText}>Reportar síntoma</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -89,9 +92,20 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#F3D3DE',
   },
-  btnWater: { backgroundColor: colors.primary, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 8 },
+  btnWater: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: colors.primary,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
   btnWaterText: { color: '#FFFFFF', fontSize: 11, fontWeight: '600' },
   btnSymptom: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: colors.accent,

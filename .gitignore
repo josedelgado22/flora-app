@@ -1,1 +1,34 @@
-node_modules
+# Dependencias
+node_modules/
+
+# Directorios Nativos Locales (Saneamiento CI/CD)
+android/
+ios/
+
+# Archivos de Construcción y Caché de Expo
+.expo/
+.eas/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.pem
+
+# Variables de Entorno y Secretos (OWASP M9)
+.env
+.env.local
+.env.development
+.env.production
+
+# Archivos del Sistema Operativo
+.DS_Store
+Thumbs.db
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+
+.expo/
+
+.expo/

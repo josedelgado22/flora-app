@@ -50,17 +50,19 @@ export function snapshotEvent({ due, overdue }) {
   if (due > 0) return EVENTS.DUE;
   return EVENTS.CLEAR;
 }
+// Íconos de MaterialCommunityIcons para cada estado de ánimo
 export const MOOD_META = {
-  feliz: { emoji: '😊' },
-  hambrienta: { emoji: '🥺' },
-  critica: { emoji: '😰' },
-  celebrando: { emoji: '🎉' },
+  feliz: { icon: 'emoticon-happy-outline', color: '#7BA44D' },
+  hambrienta: { icon: 'emoticon-sad-outline', color: '#EF6C00' },
+  critica: { icon: 'emoticon-cry-outline', color: '#C62828' },
+  celebrando: { icon: 'party-popper', color: '#E91E63' },
 };
+// icon: nombre de MaterialCommunityIcons
 export const STAGES = [
-  { level: 1, min: 0, name: 'Brote Semilla', icon: '🌱', color: '#8BC34A' },
-  { level: 2, min: 5, name: 'Cactus Bebé', icon: '🌵', color: '#2E7D32' },
-  { level: 3, min: 14, name: 'Cactus Florecido', icon: '🌸', color: '#E91E63' },
-  { level: 4, min: 30, name: 'Guardiana Leyenda', icon: '👑', color: '#FFD700' },
+  { level: 1, min: 0, name: 'Brote Semilla', icon: 'sprout', color: '#8BC34A' },
+  { level: 2, min: 5, name: 'Cactus Bebé', icon: 'cactus', color: '#2E7D32' },
+  { level: 3, min: 14, name: 'Cactus Florecido', icon: 'flower', color: '#E91E63' },
+  { level: 4, min: 30, name: 'Guardiana Leyenda', icon: 'crown', color: '#FFD700' },
 ];
 export const RENAME_UNLOCK_DAYS = 5;
 export function getStage(streakDays) {

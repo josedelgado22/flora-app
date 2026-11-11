@@ -61,7 +61,7 @@ export function buildReminderPlan(plants, now = new Date(), { hour = 9, horizonD
 
       return {
         date: new Date(today.getFullYear(), today.getMonth(), today.getDate() + offset, hour, 0, 0),
-        title: anyOverdue ? 'Riegos pendientes 💧' : 'Hoy toca regar 💧',
+        title: anyOverdue ? 'Riegos pendientes' : 'Hoy toca regar',
         body: `${joinNames(names)} ${names.length === 1 ? 'necesita' : 'necesitan'} agua.`,
         plantIds: items.map((item) => item.plant.id),
       };

@@ -2,15 +2,19 @@
  * SymptomDiagnosisModal.js - Diagnóstico de salud vegetal por síntomas (HU-FLOR-012).
  * Base de reglas causales local: funciona sin conexión.
  * Extraído del HomeScreen original para poder reutilizarlo en DiagnosisScreen.
+ * Los síntomas llevan un ícono vectorial (MaterialCommunityIcons) en lugar de emoji.
  */
 import React, { useEffect, useState } from 'react';
 import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '../theme/theme';
 
 export const CATALOGO_SINTOMAS = [
   {
     id: 's1',
-    titulo: '🟡 Hojas amarillas y blandas',
+    titulo: 'Hojas amarillas y blandas',
+    icon: 'leaf',
+    iconColor: '#F9A825',
     causa: 'Exceso de riego (asfixia radicular)',
     solucion:
       'Pausa el riego inmediatamente. Permite que los primeros 3 cm de sustrato se sequen totalmente antes de volver a regar.',
@@ -18,7 +22,9 @@ export const CATALOGO_SINTOMAS = [
   },
   {
     id: 's2',
-    titulo: '🍂 Hojas marrones, secas y crujientes',
+    titulo: 'Hojas marrones, secas y crujientes',
+    icon: 'leaf-off',
+    iconColor: '#8D6E63',
     causa: 'Falta de riego o humedad ambiental baja',
     solucion:
       'Realiza un riego por inmersión de 15 minutos y pulveriza sus hojas si es una especie tropical.',
@@ -26,7 +32,9 @@ export const CATALOGO_SINTOMAS = [
   },
   {
     id: 's3',
-    titulo: '⚫ Manchas negras u oscuras en follaje',
+    titulo: 'Manchas negras u oscuras en follaje',
+    icon: 'bacteria',
+    iconColor: '#424242',
     causa: 'Infección fúngica por exceso de humedad en hojas',
     solucion:
       'Poda las hojas infectadas con tijera desinfectada y evita mojar el follaje al regar.',
@@ -34,7 +42,9 @@ export const CATALOGO_SINTOMAS = [
   },
   {
     id: 's4',
-    titulo: '🥀 Plantas caídas o tallos débiles',
+    titulo: 'Plantas caídas o tallos débiles',
+    icon: 'sprout-outline',
+    iconColor: '#C2185B',
     causa: 'Estrés hídrico o falta de luminosidad',
     solucion:
       'Verifica la humedad del sustrato. Si está seco, riega; si está húmedo, traslada a un lugar más iluminado.',
@@ -68,16 +78,25 @@ export default function SymptomDiagnosisModal({ visible, plantName, onClose }) {
                   style={styles.option}
                   onPress={() => setResult(sintoma)}
                 >
-                  <Text style={styles.optionText}>{sintoma.titulo}</Text>
+                  <View style={styles.optionRow}>
+                    <MaterialCommunityIcons name={sintoma.icon} size={22} color={sintoma.iconColor} />
+                    <Text style={styles.optionText}>{sintoma.titulo}</Text>
+                  </View>
                 </TouchableOpacity>
               ))}
             </>
           ) : (
             <View style={styles.diagnosisBox}>
-              <Text style={styles.causeTitle}>Diagnóstico:</Text>
+              <View style={styles.titleRow}>
+                <MaterialCommunityIcons name="stethoscope" size={16} color={colors.primaryDark} />
+                <Text style={styles.causeTitle}>Diagnóstico:</Text>
+              </View>
               <Text style={styles.causeText}>{result.causa}</Text>
 
-              <Text style={styles.causeTitle}>Recomendación correctiva:</Text>
+              <View style={styles.titleRow}>
+                <MaterialCommunityIcons name="lightbulb-on-outline" size={16} color={colors.primaryDark} />
+                <Text style={styles.causeTitle}>Recomendación correctiva:</Text>
+              </View>
               <Text style={styles.solutionText}>{result.solucion}</Text>
 
               <TouchableOpacity style={styles.btnReset} onPress={() => setResult(null)}>
@@ -115,7 +134,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginBottom: 8,
   },
-  optionText: { fontSize: 12, fontWeight: '600', color: colors.text },
+  optionRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  optionText: { flex: 1, fontSize: 12, fontWeight: '600', color: colors.text },
   diagnosisBox: {
     backgroundColor: colors.tint,
     padding: 14,
@@ -124,6 +144,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.primary,
   },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   causeTitle: { fontSize: 12, fontWeight: '700', color: colors.primaryDark },
   causeText: { fontSize: 13, color: colors.text, marginBottom: 10, marginTop: 2 },
   solutionText: { fontSize: 12, color: '#333333', marginTop: 2 },

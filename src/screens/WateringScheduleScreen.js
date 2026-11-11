@@ -6,13 +6,13 @@
  */
 import React, { useMemo, useState } from 'react';
 import { Alert, RefreshControl, SectionList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import ConnectionBanner from '../components/ConnectionBanner';
 import ErrorState from '../components/ErrorState';
 import LoadingState from '../components/LoadingState';
 import MascotaWidget from '../components/MascotaWidget';
 import PlantThumb from '../components/PlantThumb';
 import { useNotifications } from '../context/NotificationsContext';
-import { usePet } from '../context/PetContext';
 import { usePlants } from '../context/PlantsContext';
 import { baseStyles, colors, radius, spacing } from '../theme/theme';
 import { buildSchedule } from '../utils/schedule';
@@ -34,7 +34,7 @@ function ScheduleRow({ item, onWater }) {
 
   return (
     <View style={[styles.row, projected && styles.rowProjected]}>
-      <PlantThumb uri={plant.foto_url} size={38} radius={11} emojiSize={18} />
+      <PlantThumb uri={plant.foto_url} size={38} radius={11} iconSize={18} />
 
       <View style={styles.rowInfo}>
         <Text style={styles.rowName} numberOfLines={1}>{plant.nombre_comun}</Text>
@@ -51,7 +51,8 @@ function ScheduleRow({ item, onWater }) {
           disabled={busy}
           accessibilityLabel={`Regar ${plant.nombre_comun}`}
         >
-          <Text style={styles.waterBtnText}>{busy ? '...' : '💧 Regar'}</Text>
+          <Ionicons name="water" size={14} color="#FFFFFF" />
+          <Text style={styles.waterBtnText}>{busy ? '...' : 'Regar'}</Text>
         </TouchableOpacity>
       )}
     </View>
@@ -72,7 +73,6 @@ export default function WateringScheduleScreen() {
     markWatered,
   } = usePlants();
   const { supported, enabled, hour } = useNotifications();
-  const { name, streak, counts } = usePet(); // datos reales de Espina para el widget flotante
 
   const sections = useMemo(() => buildSchedule(plants), [plants]);
 
@@ -104,13 +104,13 @@ export default function WateringScheduleScreen() {
 
   const handleAlimentar = () => {
     if (pendingItems.length === 0) {
-      Alert.alert('Todo regado 🌱', 'No tienes riegos pendientes por ahora.');
+      Alert.alert('Todo regado', 'No tienes riegos pendientes por ahora.');
       return;
     }
     const names = pendingItems.map((i) => i.plant.nombre_comun);
     const list = names.length > 4 ? `${names.slice(0, 4).join(', ')} y ${names.length - 4} más` : names.join(', ');
     Alert.alert(
-      'Registrar riegos 💧',
+      'Registrar riegos',
       `¿Ya regaste ${pendingItems.length === 1 ? 'esta planta' : `estas ${pendingItems.length} plantas`}?\n${list}`,
       [
         { text: 'Cancelar', style: 'cancel' },
@@ -130,11 +130,18 @@ export default function WateringScheduleScreen() {
     <View style={styles.header}>
       <Text style={styles.summary}>{summary}</Text>
       {supported && (
-        <Text style={styles.reminder}>
-          {enabled
-            ? `🔔 Te avisamos a las ${String(hour).padStart(2, '0')}:00`
-            : '🔕 Recordatorios desactivados (actívalos en Perfil)'}
-        </Text>
+        <View style={styles.reminderRow}>
+          <Ionicons
+            name={enabled ? 'notifications' : 'notifications-off'}
+            size={14}
+            color={enabled ? colors.primaryDark : colors.textMuted}
+          />
+          <Text style={styles.reminder}>
+            {enabled
+              ? `Te avisamos a las ${String(hour).padStart(2, '0')}:00`
+              : 'Recordatorios desactivados (actívalos en Perfil)'}
+          </Text>
+        </View>
       )}
       <ConnectionBanner isOnline={isOnline} pendingCount={pendingCount} source={source} />
     </View>
@@ -163,12 +170,7 @@ export default function WateringScheduleScreen() {
           <RefreshControl refreshing={isRefreshing} onRefresh={refresh} tintColor={colors.primary} />
         }
       />
-      <MascotaWidget
-        nombreInicial={name}
-        racha={streak.current}
-        estado={counts.due + counts.overdue > 0 ? 'hungry' : 'happy'}
-        onAlimentar={handleAlimentar}
-      />
+      <MascotaWidget onAlimentar={handleAlimentar} />
     </View>
   );
 }
@@ -177,7 +179,8 @@ const styles = StyleSheet.create({
   listContent: { padding: spacing.lg, paddingBottom: 110 },
   header: { marginBottom: spacing.sm },
   summary: { fontSize: 15, fontWeight: '700', color: colors.text },
-  reminder: { fontSize: 12, color: colors.textMuted, marginTop: 4 },
+  reminderRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
+  reminder: { fontSize: 12, color: colors.textMuted },
   sectionTitle: {
     marginTop: spacing.lg,
     marginBottom: spacing.sm,
@@ -196,20 +199,18 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accentTint,
   },
   rowProjected: { backgroundColor: '#FAFAFA', borderWidth: 1, borderColor: '#EEEEEE' },
-  thumb: {
-    width: 38,
-    height: 38,
-    borderRadius: 11,
-    backgroundColor: colors.primary,
-    marginRight: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  thumbEmoji: { fontSize: 18 },
   rowInfo: { flex: 1 },
   rowName: { fontSize: 14, fontWeight: '600', color: colors.text },
   rowSub: { fontSize: 11, color: colors.textMuted, marginTop: 2 },
-  waterBtn: { backgroundColor: colors.primary, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 10 },
+  waterBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: colors.primary,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+  },
   waterBtnBusy: { opacity: 0.6 },
   waterBtnText: { color: '#FFFFFF', fontSize: 12, fontWeight: '600' },
   empty: { marginTop: spacing.xl, textAlign: 'center', color: colors.textMuted, fontSize: 13 },

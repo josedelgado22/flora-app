@@ -5,11 +5,17 @@ import * as ImagePicker from 'expo-image-picker';
 import PrimaryButton from './PrimaryButton';
 import { spacing } from '../theme/theme';
 
+/**
+ * Los íconos se pasan a PrimaryButton con la prop `icon` (nombre de Ionicons).
+ * PrimaryButton debe dibujarlo antes del texto, con el color del texto del botón.
+ */
 export default function PhotoPicker({
   onPicked,
   disabled = false,
-  cameraLabel = '📷 Tomar foto',
-  galleryLabel = '🖼️ Elegir de la galería',
+  cameraLabel = 'Tomar foto',
+  galleryLabel = 'Elegir de la galería',
+  cameraIcon = 'camera',
+  galleryIcon = 'images',
 }) {
   const handleResult = (result) => {
     if (result.canceled || !result.assets?.length) return;
@@ -45,9 +51,10 @@ export default function PhotoPicker({
 
   return (
     <View style={styles.container}>
-      <PrimaryButton title={cameraLabel} onPress={openCamera} disabled={disabled} />
+      <PrimaryButton title={cameraLabel} icon={cameraIcon} onPress={openCamera} disabled={disabled} />
       <PrimaryButton
         title={galleryLabel}
+        icon={galleryIcon}
         onPress={openGallery}
         disabled={disabled}
         variant="outline"
