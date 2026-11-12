@@ -1,6 +1,5 @@
 /**
  * theme.js - Sistema de Diseño y Tokens de F.L.O.R.A.
- * Cumplimiento con la Rúbrica Duoc UC: IE 3 (Estándares), IE 7 (Accesibilidad WCAG 2.1 AA) e IE 8 (ISO/IEC 25010 Usabilidad).
  */
 import { StyleSheet, Platform } from 'react-native';
 

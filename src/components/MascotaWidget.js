@@ -2,38 +2,169 @@
 /**
  * MascotaWidget - Botón flotante de Espina (Agenda), conectado a PetContext.
  *
- * Todo sale de usePet(): nombre (se guarda al renombrar), racha real, etapa evolutiva,
- * estado de riego y la expresión del cactus (DynamicPlantMascot). Íconos vectoriales
- * (Ionicons / MaterialCommunityIcons) en lugar de emojis.
+ * - ARRASTRABLE: se mueve con el dedo y, al soltarla, se pega al borde izquierdo o derecho.
+ * - MODO BURBUJA (densidad visual): mantén pulsada la mascota (o usa el botón del menú) para
+ *   reducirla a una burbuja pequeña y translúcida que no tapa las filas de la lista.
+ * - Posición y modo se guardan en SQLite (app_meta) y se restauran al abrir la app.
  *
  * Props:
  *   onAlimentar  se llama al pulsar "Alimentar (Registrar riego)"
  */
-import React, { useRef, useState } from 'react';
-import { Animated, Modal, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  Animated,
+  Modal,
+  PanResponder,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { usePet } from '../context/PetContext';
+import { getMeta, setMeta } from '../services/db';
 import { MOODS, RENAME_UNLOCK_DAYS } from '../utils/petFsm';
 import DynamicPlantMascot from './DynamicPlantMascot';
 
+const META_KEY = 'mascot_widget';
+const FULL_SIZE = 68;
+const BUBBLE_SIZE = 42;
+const HIT_PADDING = 5;
+const EDGE_MARGIN = 20; // coincide con right: 20 del ancla
+const BOTTOM_ANCHOR = 95;
+const TOP_RESERVED = 140; // encabezado de la pantalla
+
+const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+
 export default function MascotaWidget({ onAlimentar }) {
   const { name, stage, mood, streak, statusText, counts, renamePet } = usePet();
+  const { width, height } = useWindowDimensions();
 
   const [modalVisible, setModalVisible] = useState(false);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
+  const [bubble, setBubble] = useState(false);
+
   const press = useRef(new Animated.Value(1)).current;
+  const pan = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
+  const posRef = useRef({ x: 0, y: 0 });
+  const sideRef = useRef('right');
+  const bubbleRef = useRef(false);
 
   const pending = counts.due + counts.overdue;
   const needsWater = pending > 0;
   const canRename = streak.best >= RENAME_UNLOCK_DAYS;
   const stageIcon = stage.icon ?? 'cactus'; // nombre de MaterialCommunityIcons (petFsm.STAGES)
 
+  // Límites del arrastre (relativos al ancla: abajo a la derecha)
+  const boxSize = (bubble ? BUBBLE_SIZE : FULL_SIZE) + HIT_PADDING * 2;
+  const boundsRef = useRef({ minX: 0, minY: 0, maxY: 0 });
+  boundsRef.current = {
+    minX: -(width - boxSize - EDGE_MARGIN * 2),
+    minY: -(height - BOTTOM_ANCHOR - boxSize - TOP_RESERVED),
+    maxY: 50,
+  };
+
+  const persist = useCallback((side, y, isBubble) => {
+    setMeta(META_KEY, JSON.stringify({ side, y, bubble: isBubble })).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const id = pan.addListener((value) => {
+      posRef.current = value;
+    });
+    return () => pan.removeListener(id);
+  }, [pan]);
+
+  // Restaurar posición y modo guardados
+  useEffect(() => {
+    let alive = true;
+    getMeta(META_KEY)
+      .then((raw) => {
+        if (!raw || !alive) return;
+        try {
+          const saved = JSON.parse(raw);
+          sideRef.current = saved.side === 'left' ? 'left' : 'right';
+          bubbleRef.current = Boolean(saved.bubble);
+          setBubble(Boolean(saved.bubble));
+          const { minX, minY, maxY } = boundsRef.current;
+          pan.setValue({
+            x: sideRef.current === 'left' ? minX : 0,
+            y: clamp(Number(saved.y) || 0, minY, maxY),
+          });
+        } catch {
+          // dato corrupto: se ignora
+        }
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [pan]);
+
+  // Si cambia el tamaño (burbuja) o la pantalla, mantiene el borde donde estaba
+  useEffect(() => {
+    if (sideRef.current === 'left') {
+      pan.setValue({ x: boundsRef.current.minX, y: posRef.current.y });
+    }
+  }, [bubble, width, pan]);
+
+  const snap = useCallback(() => {
+    const { minX, minY, maxY } = boundsRef.current;
+    const { x, y } = posRef.current;
+    const side = x < minX / 2 ? 'left' : 'right';
+    const targetY = clamp(y, minY, maxY);
+    sideRef.current = side;
+
+    Animated.spring(pan, {
+      toValue: { x: side === 'left' ? minX : 0, y: targetY },
+      friction: 7,
+      tension: 60,
+      useNativeDriver: false,
+    }).start();
+    persist(side, targetY, bubbleRef.current);
+  }, [pan, persist]);
+
+  const snapRef = useRef(snap);
+  snapRef.current = snap;
+
+  const panResponder = useRef(
+    PanResponder.create({
+      // Captura el gesto solo si el dedo se mueve: un toque simple sigue abriendo el menú
+      onMoveShouldSetPanResponderCapture: (_, gesture) =>
+        Math.abs(gesture.dx) > 6 || Math.abs(gesture.dy) > 6,
+      onPanResponderGrant: () => {
+        pan.setOffset({ x: posRef.current.x, y: posRef.current.y });
+        pan.setValue({ x: 0, y: 0 });
+      },
+      onPanResponderMove: Animated.event([null, { dx: pan.x, dy: pan.y }], { useNativeDriver: false }),
+      onPanResponderRelease: () => {
+        pan.flattenOffset();
+        snapRef.current();
+      },
+      onPanResponderTerminate: () => {
+        pan.flattenOffset();
+        snapRef.current();
+      },
+    })
+  ).current;
+
   const bounce = () => {
     Animated.sequence([
       Animated.timing(press, { toValue: 0.85, duration: 100, useNativeDriver: true }),
       Animated.spring(press, { toValue: 1, friction: 3, tension: 40, useNativeDriver: true }),
     ]).start();
+  };
+
+  const toggleBubble = () => {
+    const next = !bubbleRef.current;
+    bubbleRef.current = next;
+    setBubble(next);
+    persist(sideRef.current, posRef.current.y, next);
+    bounce();
   };
 
   const openMenu = () => {
@@ -57,40 +188,55 @@ export default function MascotaWidget({ onAlimentar }) {
 
   return (
     <>
-      {/* Mascota flotante */}
-      <Animated.View style={[styles.floating, { transform: [{ scale: press }] }]}>
-        <TouchableOpacity
-          onPress={openMenu}
-          activeOpacity={0.8}
-          style={styles.touchTarget}
-          accessibilityLabel={`Abrir a ${name}`}
-        >
-          <View style={[styles.levelBadge, { backgroundColor: stage.color }]}>
-            <Text style={styles.badgeText}>Nv.{stage.level}</Text>
-          </View>
-
-          <View style={styles.streakBadge}>
-            <Ionicons name="flame" size={11} color="#FFFFFF" />
-            <Text style={styles.badgeText}>{streak.current}d</Text>
-          </View>
-
-          <View
-            style={[
-              styles.avatar,
-              { borderColor: needsWater ? '#D32F2F' : stage.color },
-              needsWater && styles.avatarHungry,
-            ]}
+      {/* Mascota flotante (arrastrable) */}
+      <Animated.View
+        {...panResponder.panHandlers}
+        style={[styles.floating, { transform: pan.getTranslateTransform() }]}
+      >
+        <Animated.View style={{ transform: [{ scale: press }] }}>
+          <TouchableOpacity
+            onPress={openMenu}
+            onLongPress={toggleBubble}
+            delayLongPress={450}
+            activeOpacity={0.8}
+            style={styles.touchTarget}
+            accessibilityLabel={`Abrir a ${name}`}
+            accessibilityHint="Mantén pulsado para cambiar entre mascota y burbuja. Arrástrala para moverla."
           >
-            <DynamicPlantMascot
-              due={counts.due}
-              overdue={counts.overdue}
-              streakDays={streak.current}
-              isCelebrating={mood === MOODS.CELEBRANDO}
-              resizeMode="cover"
-              style={styles.avatarImage}
-            />
-          </View>
-        </TouchableOpacity>
+            {!bubble && (
+              <>
+                <View style={[styles.levelBadge, { backgroundColor: stage.color }]}>
+                  <Text style={styles.badgeText}>Nv.{stage.level}</Text>
+                </View>
+
+                <View style={styles.streakBadge}>
+                  <Ionicons name="flame" size={11} color="#FFFFFF" />
+                  <Text style={styles.badgeText}>{streak.current}d</Text>
+                </View>
+              </>
+            )}
+
+            {bubble && needsWater ? <View style={styles.bubbleDot} /> : null}
+
+            <View
+              style={[
+                styles.avatar,
+                bubble && styles.avatarBubble,
+                { borderColor: needsWater ? '#D32F2F' : stage.color },
+                needsWater && styles.avatarHungry,
+              ]}
+            >
+              <DynamicPlantMascot
+                due={counts.due}
+                overdue={counts.overdue}
+                streakDays={streak.current}
+                isCelebrating={mood === MOODS.CELEBRANDO}
+                resizeMode="cover"
+                style={bubble ? styles.avatarImageBubble : styles.avatarImage}
+              />
+            </View>
+          </TouchableOpacity>
+        </Animated.View>
       </Animated.View>
 
       {/* Menú de la mascota */}
@@ -175,6 +321,21 @@ export default function MascotaWidget({ onAlimentar }) {
                   </View>
                 )}
 
+                <TouchableOpacity
+                  style={styles.btnSecondary}
+                  onPress={() => {
+                    setModalVisible(false);
+                    toggleBubble();
+                  }}
+                >
+                  <View style={styles.btnContent}>
+                    <Ionicons name={bubble ? 'expand' : 'contract'} size={15} color="#333333" />
+                    <Text style={styles.btnTextDark}>
+                      {bubble ? 'Ampliar mascota' : 'Minimizar a burbuja'}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+
                 <TouchableOpacity style={styles.btnClose} onPress={() => setModalVisible(false)}>
                   <Text style={styles.btnCloseText}>Cerrar</Text>
                 </TouchableOpacity>
@@ -190,16 +351,16 @@ export default function MascotaWidget({ onAlimentar }) {
 const styles = StyleSheet.create({
   floating: {
     position: 'absolute',
-    bottom: 95,
-    right: 20,
+    bottom: BOTTOM_ANCHOR,
+    right: EDGE_MARGIN,
     zIndex: 9999,
     elevation: 10,
   },
-  touchTarget: { alignItems: 'center', justifyContent: 'center', padding: 5 },
+  touchTarget: { alignItems: 'center', justifyContent: 'center', padding: HIT_PADDING },
   avatar: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
+    width: FULL_SIZE,
+    height: FULL_SIZE,
+    borderRadius: FULL_SIZE / 2,
     backgroundColor: '#FFFFFF',
     borderWidth: 3,
     justifyContent: 'center',
@@ -211,8 +372,28 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 4.65,
   },
+  avatarBubble: {
+    width: BUBBLE_SIZE,
+    height: BUBBLE_SIZE,
+    borderRadius: BUBBLE_SIZE / 2,
+    borderWidth: 2,
+    opacity: 0.85,
+  },
   avatarHungry: { backgroundColor: '#FFEBEE' },
   avatarImage: { width: 62, height: 62, borderRadius: 31 },
+  avatarImageBubble: { width: 38, height: 38, borderRadius: 19 },
+  bubbleDot: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#D32F2F',
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
+    zIndex: 10,
+  },
   streakBadge: {
     position: 'absolute',
     top: -3,

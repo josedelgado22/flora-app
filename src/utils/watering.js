@@ -1,6 +1,5 @@
 /**
  * watering.js - Estado de riego por plantas, en días calendario.
- * (Reemplaza la versión del Bloque B: ahora Home, Agenda y notificaciones coinciden.)
  */
 import { addDays, diffInDays, startOfDay } from './dates';
 

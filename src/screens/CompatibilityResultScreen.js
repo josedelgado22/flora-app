@@ -12,6 +12,7 @@ import { usePlants } from '../context/PlantsContext';
 import { baseStyles, colors, radius, spacing } from '../theme/theme';
 import { evaluateCompatibility } from '../utils/compatibility';
 import { lightLabel } from '../utils/light';
+import { sourceLabel } from '../utils/certainty';
 import { buildPlantPayload } from '../utils/plantPayload';
 
 const VERDICT_META = {
@@ -110,16 +111,20 @@ export default function CompatibilityResultScreen({ route, navigation }) {
         style={styles.second}
       />
 
-      {/* Atribución Normativa Obligatoria a Pl@ntNet (Términos de Servicio API) */}
+      {/* Fuente del resultado (transparencia) + atribución obligatoria a Pl@ntNet cuando aplica */}
       <View style={styles.attributionContainer}>
         <Text style={styles.attributionTitle}>Reconocimiento de Fuente de Datos</Text>
-        <Text style={styles.attributionBody}>
-          Identificación botánica procesada mediante <Text style={styles.boldText}>Pl@ntNet v2 Vision API</Text>
-          {tiempoMs > 0 ? ` (${tiempoMs} ms)` : ''}.
-        </Text>
-        <Text style={styles.attributionSub}>
-          Fuente: {fuente === 'plantnet' ? 'Pl@ntNet v2 SaaS' : 'Catálogo Botánico Sintético Local'}
-        </Text>
+        {fuente === 'plantnet' ? (
+          <Text style={styles.attributionBody}>
+            Identificación botánica procesada mediante <Text style={styles.boldText}>Pl@ntNet v2 Vision API</Text>
+            {tiempoMs > 0 ? ` (${tiempoMs} ms)` : ''}.
+          </Text>
+        ) : (
+          <Text style={styles.attributionBody}>
+            Este resultado no proviene de una identificación por imagen de Pl@ntNet.
+          </Text>
+        )}
+        <Text style={styles.attributionSub}>Fuente: {sourceLabel(fuente)}</Text>
       </View>
     </ScrollView>
   );

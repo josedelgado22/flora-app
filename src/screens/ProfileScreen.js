@@ -8,13 +8,15 @@
  *   - Días con riego: historial local (SQLite), se relee cada vez que se abre la pestaña
  *   - Cuenta y cierre de sesión: AuthContext
  *
- * Alineado con Rúbrica Duoc UC: IE 3 (WCAG 2.1 AA) e IE 7 (OWASP Mobile M2).
+ * Panel oculto de demostración: 5 toques seguidos sobre el texto de la versión (final de la pantalla).
  */
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import React, { useCallback, useMemo, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import DemoPanel from '../components/DemoPanel';
+import SecretTapArea from '../components/Secrettaparea';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationsContext';
 import { usePet } from '../context/PetContext';
@@ -50,6 +52,7 @@ export default function ProfileScreen() {
   const { plants, isOnline, pendingCount } = usePlants();
   const { supported, enabled, hour, setReminders, sendTest } = useNotifications();
   const [wateringDays, setWateringDays] = useState(0);
+  const [demoOpen, setDemoOpen] = useState(false);
 
   // Cada vez que se abre la pestaña se relee el historial de riegos
   useFocusEffect(
@@ -125,19 +128,27 @@ export default function ProfileScreen() {
           <Text style={styles.userEmail}>{user?.email || 'usuario@flora.cl'}</Text>
 
           <View style={[styles.stageTag, { backgroundColor: `${stage.color}22` }]}>
+            <MaterialCommunityIcons name={stage.icon} size={16} color={colors.primaryDark} />
             <Text style={[styles.stageTagText, { color: colors.primaryDark }]}>
-              {stage.icon} {stage.name} · Nivel {stage.level}
+              {stage.name} · Nivel {stage.level}
             </Text>
           </View>
 
           <View style={styles.stageTrack}>
             <View style={[styles.stageFill, { width: `${Math.round(stageProgress * 100)}%`, backgroundColor: stage.color }]} />
           </View>
-          <Text style={styles.stageHint}>
-            {nextStage
-              ? `${nextStage.min - bestStreak} ${plural(nextStage.min - bestStreak, 'día', 'días')} de racha para ${nextStage.icon} ${nextStage.name}`
-              : '¡Alcanzaste la etapa máxima!'}
-          </Text>
+
+          {nextStage ? (
+            <View style={styles.stageHintRow}>
+              <Text style={styles.stageHintInline}>
+                {nextStage.min - bestStreak} {plural(nextStage.min - bestStreak, 'día', 'días')} de racha para
+              </Text>
+              <MaterialCommunityIcons name={nextStage.icon} size={15} color={colors.primaryDark} />
+              <Text style={styles.stageHintInline}>{nextStage.name}</Text>
+            </View>
+          ) : (
+            <Text style={styles.stageHint}>¡Alcanzaste la etapa máxima!</Text>
+          )}
         </View>
 
         {/* 2. Métricas */}
@@ -279,7 +290,7 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* 5. Cierre de sesión */}
+        {/* 6. Cierre de sesión */}
         <TouchableOpacity
           style={styles.logoutButton}
           onPress={handleLogout}
@@ -291,8 +302,13 @@ export default function ProfileScreen() {
           <Text style={styles.logoutText}>Cerrar sesión segura</Text>
         </TouchableOpacity>
 
-        <Text style={styles.versionText}>F.L.O.R.A. v2.5.0 • Duoc UC Portafolio de Título</Text>
+        {/* 5 toques seguidos abren el panel oculto de demostración */}
+        <SecretTapArea taps={5} onUnlock={() => setDemoOpen(true)} style={styles.versionArea}>
+          <Text style={styles.versionText}>F.L.O.R.A. v2.5.0 • Duoc UC Portafolio de Título</Text>
+        </SecretTapArea>
       </ScrollView>
+
+      <DemoPanel visible={demoOpen} onClose={() => setDemoOpen(false)} />
     </SafeAreaView>
   );
 }
@@ -326,6 +342,9 @@ const styles = StyleSheet.create({
   userName: { fontSize: typography.size.lg, fontWeight: typography.weight.bold, color: colors.primaryDark },
   userEmail: { fontSize: typography.size.sm, color: colors.textMuted, marginTop: 2 },
   stageTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
     borderRadius: radius.pill,
@@ -342,6 +361,15 @@ const styles = StyleSheet.create({
   },
   stageFill: { height: 8, borderRadius: 4 },
   stageHint: { fontSize: typography.size.xs, color: colors.textMuted, fontWeight: typography.weight.medium, marginTop: 6 },
+  stageHintRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    marginTop: 6,
+  },
+  stageHintInline: { fontSize: typography.size.xs, color: colors.textMuted, fontWeight: typography.weight.medium },
 
   statsRow: { flexDirection: 'row', marginBottom: spacing.md },
   statCard: {
@@ -453,5 +481,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   logoutText: { color: colors.danger, fontWeight: typography.weight.bold, fontSize: typography.size.sm, marginLeft: 8 },
-  versionText: { textAlign: 'center', color: colors.textMuted, fontSize: typography.size.xs, marginTop: spacing.md },
+  versionArea: { paddingVertical: spacing.md, marginTop: spacing.xs },
+  versionText: { textAlign: 'center', color: colors.textMuted, fontSize: typography.size.xs },
 });

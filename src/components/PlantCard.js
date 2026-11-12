@@ -44,6 +44,7 @@ export default function PlantCard({ plant, onWater, onReportSymptom, onPress }) 
         <Text style={[styles.waterTag, isDue && styles.waterTagUrgent]} numberOfLines={2}>
           {status.label}
         </Text>
+        {onPress ? <Ionicons name="chevron-forward" size={16} color={colors.textMuted} /> : null}
       </TouchableOpacity>
 
       <View style={styles.actionRow}>

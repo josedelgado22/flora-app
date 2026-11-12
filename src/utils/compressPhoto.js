@@ -1,7 +1,6 @@
 /**
  * compressPhoto.js - Reduce la foto antes de subirla (el servidor acepta hasta 3 MB).
  * Recibe la URI de la foto y devuelve la URI de un JPEG de máx. 1280 px, calidad 0.7.
- * Ubicación: src/utils/compressPhoto.js
  */
 import * as ImageManipulator from 'expo-image-manipulator';
 

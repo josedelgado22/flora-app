@@ -20,7 +20,7 @@ const PLACE_OPTIONS = [
 ];
 
 export default function EnvironmentScanScreen({ route, navigation }) {
-  const { photoUri, species } = route.params;
+  const { photoUri, species, fuente = 'plantnet', tiempoMs = 0 } = route.params;
 
   const [ubicacion, setUbicacion] = useState(
     species.ubicacion_ideal === 'exterior' ? 'exterior' : 'interior'
@@ -57,6 +57,8 @@ export default function EnvironmentScanScreen({ route, navigation }) {
       species,
       light,
       ubicacion,
+      fuente,
+      tiempoMs,
     });
 
   return (

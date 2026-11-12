@@ -1,25 +1,38 @@
 /**
  * PlantDetailScreen.js - Resultado de la identificación (ruta "PlantResult").
- * Recibe { photoUri, candidates[], estimada, isDemo }. Permite elegir entre candidatos,
- * evaluar el lugar (flujo completo) o guardar directamente.
+ * Recibe { photoUri, candidates[], estimada, isDemo, fuente, tiempoMs }.
+ * Muestra la INSIGNIA DE CERTIDUMBRE: "Verificada por IA", "Clasificación heurística" o "Demostración".
+ * Permite elegir entre candidatos, evaluar el lugar (flujo completo) o guardar directamente.
  */
 import React, { useState } from 'react';
 import { Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import CertaintyBadge from '../components/CertaintyBadge';
 import PrimaryButton from '../components/PrimaryButton';
 import { usePlants } from '../context/PlantsContext';
 import { baseStyles, colors, radius, spacing } from '../theme/theme';
+import { CERTAINTY, CERTAINTY_META, getCertainty } from '../utils/certainty';
 import { lightLabel } from '../utils/light';
 import { buildPlantPayload } from '../utils/plantPayload';
 
+const hasValue = (text) => Boolean(text) && !/no disponible/i.test(text);
+
 export default function PlantDetailScreen({ route, navigation }) {
-  const { photoUri = null, candidates = [], estimada = false, isDemo = false } = route.params ?? {};
+  const {
+    photoUri = null,
+    candidates = [],
+    estimada = false,
+    isDemo = false,
+    fuente = null,
+    tiempoMs = 0,
+  } = route.params ?? {};
   const { addPlant } = usePlants();
 
   const [selected, setSelected] = useState(0);
   const [saving, setSaving] = useState(false);
 
   const species = candidates[selected];
+  const certainty = getCertainty({ isDemo, estimada });
 
   if (!species) {
     return (
@@ -49,6 +62,8 @@ export default function PlantDetailScreen({ route, navigation }) {
     }
   };
 
+  const showTemperature = hasValue(species.temperatura);
+
   return (
     <ScrollView style={baseStyles.screen} contentContainerStyle={styles.content}>
       {photoUri ? (
@@ -59,13 +74,15 @@ export default function PlantDetailScreen({ route, navigation }) {
         </View>
       )}
 
-      <View style={styles.matchTag}>
-        <Text style={styles.matchText}>
-          {estimada ? `Coincidencia estimada ~${species.coincidencia}%` : `${species.coincidencia}% de coincidencia`}
-        </Text>
-      </View>
+      <CertaintyBadge
+        certainty={certainty}
+        percent={species.coincidencia}
+        style={styles.certaintyBadge}
+      />
 
-      {isDemo && (
+      <Text style={styles.certaintyHint}>{CERTAINTY_META[certainty].hint}</Text>
+
+      {certainty === CERTAINTY.DEMO && (
         <View style={styles.demoBox}>
           <Ionicons name="information-circle" size={16} color={colors.warning} />
           <Text style={styles.demoText}>
@@ -74,16 +91,19 @@ export default function PlantDetailScreen({ route, navigation }) {
         </View>
       )}
 
-      {estimada && (
+      {certainty === CERTAINTY.HEURISTICA && (
         <Text style={styles.note}>
           Resultado estimado con tus respuestas. Confirma que se parece a tu planta.
         </Text>
       )}
 
       {species.datos_estimados && (
-        <Text style={styles.note}>
-          Esta especie no está en nuestro catálogo: los datos de cuidado son estimados.
-        </Text>
+        <View style={styles.estimatedRow}>
+          <Ionicons name="alert-circle-outline" size={16} color={colors.warning} />
+          <Text style={styles.noteInline}>
+            Esta especie no está en nuestro catálogo: los datos de cuidado son estimados.
+          </Text>
+        </View>
       )}
 
       {candidates.length > 1 && (
@@ -117,16 +137,25 @@ export default function PlantDetailScreen({ route, navigation }) {
           <Text style={styles.careVal}>{lightLabel(species.nivel_luz_ideal)}</Text>
           <Text style={styles.careLab}>luz ideal</Text>
         </View>
-        <View style={styles.careChip}>
-          <Ionicons name="thermometer-outline" size={18} color="#E53935" />
-          <Text style={styles.careVal}>{species.temperatura}</Text>
-          <Text style={styles.careLab}>temperatura</Text>
-        </View>
+        {showTemperature ? (
+          <View style={styles.careChip}>
+            <Ionicons name="thermometer-outline" size={18} color="#E53935" />
+            <Text style={styles.careVal}>{species.temperatura}</Text>
+            <Text style={styles.careLab}>temperatura</Text>
+          </View>
+        ) : null}
       </View>
 
       <PrimaryButton
         title="Evaluar el lugar donde la pondré"
-        onPress={() => navigation.navigate('EnvironmentScan', { photoUri, species })}
+        onPress={() =>
+          navigation.navigate('EnvironmentScan', {
+            photoUri,
+            species,
+            fuente: fuente ?? (certainty === CERTAINTY.HEURISTICA ? 'heuristica' : isDemo ? 'simulado' : 'plantnet'),
+            tiempoMs,
+          })
+        }
         disabled={saving}
         style={styles.cta}
       />
@@ -145,16 +174,8 @@ const styles = StyleSheet.create({
   content: { padding: spacing.lg },
   photo: { height: 200, borderRadius: 18, width: '100%' },
   photoPlaceholder: { backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
-  matchTag: {
-    alignSelf: 'flex-start',
-    marginTop: -14,
-    marginLeft: spacing.md,
-    backgroundColor: '#000000',
-    borderRadius: 100,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
-  matchText: { color: '#FFFFFF', fontSize: 11, fontWeight: '600' },
+  certaintyBadge: { marginTop: -14, marginLeft: spacing.md },
+  certaintyHint: { marginTop: spacing.sm, fontSize: 12, color: colors.textMuted },
   demoBox: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -166,6 +187,8 @@ const styles = StyleSheet.create({
   },
   demoText: { flex: 1, fontSize: 12, color: colors.warning, fontWeight: '500' },
   note: { marginTop: spacing.sm, fontSize: 12, color: colors.warning },
+  estimatedRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: spacing.sm },
+  noteInline: { flex: 1, fontSize: 12, color: colors.warning },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.md },
   chip: {
     paddingVertical: 6,

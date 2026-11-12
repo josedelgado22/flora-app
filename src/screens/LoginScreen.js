@@ -1,5 +1,5 @@
 /**
- * LoginScreen.js - Inicio de sesión (HU-FLOR-001/005). Diseño original de F.L.O.R.A.
+ * LoginScreen.js - Inicio de sesión (HU-FLOR-001/005).
  * El nombre del usuario proviene de la cuenta autenticada (ya no se pide en el formulario).
  * Al autenticarse, RootNavigator cambia solo a las tabs principales.
  */
@@ -96,7 +96,6 @@ export default function LoginScreen({ navigation, route }) {
           style={[styles.inner, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}
         >
           <View style={styles.logoRow}>
-            <View style={styles.logoMark} />
             <Text style={styles.logoText}>F.L.O.R.A.</Text>
           </View>
 
@@ -158,10 +157,6 @@ export default function LoginScreen({ navigation, route }) {
               <Text style={styles.bannerText}>{formError}</Text>
             </View>
           ) : null}
-
-          <TouchableOpacity activeOpacity={0.7}>
-            <Text style={styles.forgot}>¿Olvidaste tu contraseña?</Text>
-          </TouchableOpacity>
 
           <PrimaryButton
             title="Iniciar sesión"

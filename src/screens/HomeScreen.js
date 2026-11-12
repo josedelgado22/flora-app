@@ -122,6 +122,7 @@ export default function HomeScreen({ navigation }) {
                 plant={plant}
                 onWater={handleWater}
                 onReportSymptom={handleReportSymptom}
+                onPress={() => navigation.navigate('PlantHistory', { plantId: plant.id })}
               />
             ))
           )}
