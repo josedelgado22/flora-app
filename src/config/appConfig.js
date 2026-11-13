@@ -46,13 +46,13 @@ export const WARMUP_TIMEOUT_MS = 60000;
 
 // Las llamadas a la IA (diagnóstico / identificación, con imagen) necesitan más margen que SC-01.
 // Úsalo así: request('/identificacion/...', { ..., timeoutMs: AI_REQUEST_TIMEOUT_MS })
-export const AI_REQUEST_TIMEOUT_MS = 20000;
-
+export const AI_REQUEST_TIMEOUT_MS = 45000; 
+// cubre el arranque en frío de Render
+// si la IA falla -> cuestionario, nunca resultados falsos
 // Qué hacer cuando la IA (Pl@ntNet) no está disponible:
 //   false -> conmutar al cuestionario manual (SC-01, resiliencia real)
 //   true  -> mostrar resultados de DEMOSTRACIÓN del catálogo local, marcados como tales en pantalla
-export const AI_DEMO_FALLBACK = true;
-
+export const AI_DEMO_FALLBACK = false; 
 // Modo Mocks: al estar en false, todo el tráfico consume la API real de Django
 export const FORCE_MOCKS = false;
 
